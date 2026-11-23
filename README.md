@@ -44,6 +44,12 @@ StreamClipper vigila los canales que elijas, encuentra los momentos que vale la 
 | **Phone** | **Upload queue** | **Settings** |
 | ![Phone view](docs/capturas/movil.png) | ![Upload queue](docs/capturas/cola.png) | ![Settings](docs/capturas/ajustes.png) |
 
+### New to this? / ¿Es tu primera vez?
+
+Never used a terminal? Follow the step-by-step manual (in Spanish): [StreamClipper · Primeros pasos (PDF)](docs/manual/StreamClipper-Primeros-pasos.pdf). It takes you from a clean Windows, macOS or Linux computer to your first clip in about 20 minutes, and the app itself opens a «Primeros pasos» checklist on your first login.
+
+¿Nunca has usado una terminal? Sigue el [manual paso a paso (PDF)](docs/manual/StreamClipper-Primeros-pasos.pdf): te lleva de un ordenador sin nada a tu primer clip en unos 20 minutos. Al entrar por primera vez, la propia app te abre la lista «Primeros pasos».
+
 ## Install
 
 You need Node.js 22.13 or newer, FFmpeg and yt-dlp. Whisper (whisper.cpp) is optional and only needed for captions.
@@ -57,6 +63,8 @@ npm start
 
 Open http://localhost:8790 and create your account. The first login becomes the owner. If FFmpeg or yt-dlp are missing, the server tells you which one when it starts.
 
+Long videos and finished streams work out of the box: StreamClipper picks the best moments (AI marks if you connected one, otherwise YouTube's "most replayed" curve and audio peaks), downloads only those sections and turns each one into a clip. OpenShorts can be plugged in as an optional backend in Ajustes › Clips.
+
 To reach it from your phone, put it on [Tailscale](https://tailscale.com) and open the same address through your tailnet. A sample systemd unit is in `servidor/herramientas/`.
 
 ## What's not in this repository
@@ -66,6 +74,10 @@ Your data, your keys and your accounts. The database, the videos, the Groq key, 
 ## Coming next
 
 A native Android app (Jetpack Compose) is in progress.
+
+## Privacy
+
+Anonymous usage telemetry is **off by default** and only turns on if the owner says yes. [TELEMETRY.md](TELEMETRY.md) lists every field. `STREAMCLIPPER_TELEMETRIA=0` or `DO_NOT_TRACK=1` turns it off for good. To report a bug, use **Más › Reportar un problema** in the app: it opens a pre-filled GitHub issue you can review first.
 
 ## Contributing
 

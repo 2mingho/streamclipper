@@ -21,7 +21,7 @@ const RUTAS = ['/api/social/cuentas', '/api/social/historias', '/api/social/feed
   '/api/subidas', '/api/estadisticas/resumen', '/api/estudio', '/api/estudio/ideas',
   '/api/ajustes', '/api/clips', '/api/clips/galeria',
   '/api/movil/galeria', '/api/recop', '/api/publicacion', '/api/pendientes', '/api/operaciones', '/api/editor/recursos',
-  '/api/cuentas', '/api/sistema', '/api/sistema/alertas', '/api/sistema/recursos', '/api/yo', '/api/usuarios', '/api/app/version'];
+  '/api/cuentas', '/api/sistema', '/api/sistema/alertas', '/api/sistema/recursos', '/api/yo', '/api/usuarios', '/api/primeros-pasos', '/api/app/version'];
 const PAGINAS = ['', 'explorar', 'reels', 'perfil', 'actividad', 'mensajes', 'clips', 'galeria', 'cola', 'subida', 'publicacion', 'estudio', 'recopilatorios',
   'estadisticas', 'operaciones', 'sistema', 'ajustes'];
 

@@ -154,6 +154,7 @@ function hojaClip(f, { alQuitar, alCambiar } = {}) {
   if (!publicado && f.encuadrePropio) ops.push({ texto: 'Cambiar el texto en pantalla', sub: f.gancho ? `Ahora: «${f.gancho}»` : 'El texto fijo de arriba', icono: 'texto', accion: () => hojaFormulario('Texto en pantalla', [
     { nombre: 'gancho', etiqueta: 'Máx. 40 caracteres: creador + lo que hace', valor: f.gancho, max: 45 }],
     async (v) => { aviso('Repintando el vídeo…'); await Acc.gancho(f.id, f.n, v.gancho); aviso('Texto en pantalla cambiado'); alCambiar?.(); }, { nota: 'Se vuelve a generar el vídeo (tarda unos segundos).' }) });
+  ops.push({ texto: 'Descargar el vídeo', sub: 'Para subirlo a mano donde quieras', icono: 'abajo', accion: () => { location.href = `/api/clips/video/${f.id}/${f.n}?descargar=1`; } });
   if (f.editable && !publicado) ops.push({ texto: 'Editar el vídeo', sub: 'Encuadre, inicio y final, textos y subtítulos', icono: 'tijera', accion: () => { location.hash = `#/editor/${f.id}/${f.n}`; } });
   if (!yt) ops.push({ texto: f.campana ? 'Programar en YouTube' : 'Publicar ya en YouTube', sub: f.campana ? 'En el siguiente hueco de la franja de la campaña' : undefined, icono: 'enviar', accion: () => elegirCuenta('youtube', async (cuenta) => { const r = await Acc.publicarYa(f.id, f.n, cuenta); aviso(r.programado ? `Campaña: programado ${hace(r.programado + 'Z')} (en su franja)` : 'En la cola de YouTube'); alCambiar?.(); }) });
   else if (yt.estado === 'pendiente' || yt.estado === 'error') ops.push({ texto: 'Quitar de la cola de YouTube', sub: yt.estado === 'error' ? `Falló: ${yt.error || ''}` : yt.cuando ? `Programado ${hace(yt.cuando)}` : 'En cola', icono: 'papelera', peligro: true, accion: async () => { await Acc.quitarYoutube(f.id, f.n); aviso('Quitado de la cola'); alCambiar?.(); } });
@@ -289,8 +290,94 @@ function conectarTarjetas(raiz, posts, recargar) {
 }
 
 // ---------- vistas ----------
+// ---------- primeros pasos: del panel vacío al primer clip revisado (solo el dueño) ----------
+// Página del manual (docs/manual) con la instalación de cada herramienta.
+const MANUAL_HERRAMIENTAS = '/manual.pdf#page=3';
+let relojPrimeros;
+const REPO = 'https://github.com/2mingho/streamclipper';
+// «Reportar un problema»: abre una incidencia de GitHub ya rellenada con el diagnóstico (sin datos personales) para revisarla antes de enviarla.
+async function reportarProblema() {
+  let d = {}; try { d = await api('/api/diagnostico'); } catch {}
+  const h = d.herramientas || {}, si = (x) => (x ? 'sí' : 'no');
+  const cuerpo = ['**Qué pasó / What happened**', '', '(Cuéntalo aquí: qué hiciste y qué esperabas. No pegues contraseñas ni claves.)', '', '**Diagnóstico**',
+    `- StreamClipper: ${d.version || '?'}`, `- Sistema: ${d.os || '?'}`, `- Node.js: ${d.node || '?'}`,
+    `- FFmpeg: ${si(h.ffmpeg)} · yt-dlp: ${si(h['yt-dlp'])} · Whisper: ${si(h.whisper)}`, `- Primeros pasos: ${d.paso || '?'}`, `- Último error: ${d.error || '?'}`].join('\n');
+  window.open(`${REPO}/issues/new?${new URLSearchParams({ title: 'Problema: ', body: cuerpo })}`, '_blank', 'noopener');
+}
+function htmlTelemetria(t) {
+  if (!t || t.preguntado || t.forzadaOff) return '';
+  return `<div class="tele-pp"><div><b>¿Nos ayudas a mejorar StreamClipper?</b><br><small class="muted">Envía datos anónimos de uso: versión, sistema, qué pasos completas y códigos de error. Nunca títulos, enlaces ni nombres. <a href="${REPO}/blob/main/TELEMETRY.md" target="_blank" rel="noopener">Qué se envía exactamente</a></small></div>
+    <div class="botones"><button class="boton primario" data-pp="tele-si">Sí, ayudar</button><button class="boton" data-pp="tele-no">No, gracias</button></div></div>`;
+}
+const FASE_VIDEO = { cola: 'En la cola: empieza en unos segundos', procesando: 'En marcha', troceando: 'Bajando los momentos elegidos', propuesto: 'Esperando tu aprobación', descartado: 'Descartado', error: 'No se pudo recortar' };
+function pasoPrimeros(k, p, cuerpo, boton = '') {
+  return `<li class="paso ${p.hecho ? 'hecho' : ''} ${p.opcional ? 'opcional' : ''}" data-paso="${p.id}">
+    <span class="marca-paso" aria-hidden="true">${p.hecho ? I('check') : esc(String(k))}</span>
+    <div class="txt"><b>${esc(p.titulo)}</b>${p.opcional ? ' <span class="chip-estado">Opcional</span>' : ''}<div class="detalle">${cuerpo}</div></div>
+    ${boton ? `<div class="botones">${boton}</div>` : ''}</li>`;
+}
+function htmlPrimeros(d) {
+  const P = Object.fromEntries(d.pasos.map((p) => [p.id, p]));
+  const obligatorios = d.pasos.filter((p) => !p.opcional), hechos = obligatorios.filter((p) => p.hecho).length;
+  if (d.completo) return `<div class="primeros-cab"><div><b>Primeros pasos completados</b><br><small class="muted">Tu primer clip está revisado. Lo siguiente: añade streamers para que StreamClipper los vigile solo.</small></div><button class="enlace" data-pp="ocultar">Ocultar</button></div>${htmlTelemetria(d.telemetria)}`;
+  const h = P.herramientas, faltan = h.detalle.filter((x) => x.obligatorio && !x.ok), extra = h.detalle.filter((x) => !x.obligatorio);
+  const herr = (faltan.length ? `Falta ${faltan.map((x) => `<b>${esc(x.nombre)}</b>`).join(' y ')}: ${esc(faltan.map((x) => x.para).join(' '))}`
+    : 'FFmpeg y yt-dlp están listos.') + `<ul class="herr">${extra.map((x) => `<li><span class="punto-estado ${x.ok ? 'ok' : ''}"></span>${esc(x.nombre)}: ${x.ok ? 'listo' : esc(x.para)}</li>`).join('')}</ul>`;
+  const v = P.procesando.video;
+  const proc = !v ? 'Cuando añadas un vídeo, aquí verás en qué fase va.'
+    : P.procesando.hecho ? `«${esc(v.titulo || 'Tu vídeo')}» ya tiene clips.`
+    : `<span class="fase ${v.estado === 'error' ? 'error-txt' : ''}">${esc(FASE_VIDEO[v.estado] || v.estado)}${v.paso && v.estado === 'procesando' ? `: ${esc(v.paso)}` : ''}</span>${v.estado === 'error' && v.error ? `<br><small>${esc(v.error)}</small>` : ''}<br><small class="muted">«${esc(v.titulo || 'Tu vídeo')}» · añadido ${esc(hace(v.creado))}</small>`;
+  const btnProc = v && !P.procesando.hecho ? (v.estado === 'error' ? `<button class="boton primario" data-pp="reintentar" data-id="${v.id}">Reintentar</button><button class="boton" data-pp="reportar">Reportar un problema</button>` : '<a class="boton" href="#/cola">Ver la cola</a>') : '';
+  return `<div class="primeros-cab"><div><b>Primeros pasos</b> <span class="muted tnum">· ${hechos} de ${obligatorios.length}</span><br><small class="muted">Hasta tu primer clip, en unos 20 minutos.</small></div><button class="enlace" data-pp="ocultar">Ocultar</button></div>
+    <div class="progreso-pp" role="progressbar" aria-valuemin="0" aria-valuemax="${obligatorios.length}" aria-valuenow="${hechos}"><i style="width:${(hechos / obligatorios.length) * 100}%"></i></div>
+    <ol class="pasos-pp">
+      ${pasoPrimeros(1, h, herr, h.hecho ? '<button class="boton" data-pp="comprobar">Comprobar</button>' : `<a class="boton primario" href="${MANUAL_HERRAMIENTAS}" target="_blank" rel="noopener">Cómo instalarlo</a><button class="boton" data-pp="comprobar">Comprobar</button>`)}
+      ${pasoPrimeros(2, P.video, P.video.hecho ? 'Hecho. Puedes añadir más desde Crear › Vídeo.' : 'Pega el enlace de un vídeo o un directo ya emitido de YouTube, Twitch o Kick. Si es largo, StreamClipper elige sus mejores momentos.',
+        P.video.hecho ? '' : `<button class="boton ${h.hecho ? 'primario' : ''}" data-pp="video">Pegar un enlace</button>`)}
+      ${pasoPrimeros(3, P.procesando, proc, btnProc)}
+      ${pasoPrimeros(4, P.revisar, P.revisar.hecho ? 'Hecho. Cada «Sirve» o «No sirve» enseña a la app qué te gusta.' : P.revisar.video ? 'Tu primer clip está listo. Míralo y marca «Sirve» o «No sirve».' : 'Cuando el vídeo termine, lo verás aquí.',
+        P.revisar.video && !P.revisar.hecho ? '<a class="boton primario" href="#/reels">Abrir mi primer clip</a>' : '')}
+      ${pasoPrimeros(5, P.streamer, P.streamer.hecho ? 'Hecho: StreamClipper mira sus vídeos nuevos solo.' : 'Un canal de YouTube o Twitch que StreamClipper vigilará solo.', P.streamer.hecho ? '' : '<button class="boton" data-pp="streamer">Añadir streamer</button>')}
+      ${pasoPrimeros(6, P.youtube, P.youtube.hecho ? 'Hecho.' : 'Para publicar los clips desde aquí. Necesita una app propia en Google Cloud (el manual lo explica).', P.youtube.hecho ? '' : '<a class="boton" href="#/ajustes/publicacion">Conectar YouTube</a>')}
+    </ol>${htmlTelemetria(d.telemetria)}`;
+}
+async function montarPrimeros(el, { refrescar = false } = {}) {
+  clearTimeout(relojPrimeros);
+  if (!el || E.yo?.rol !== 'dueno') return;
+  let d; try { d = await api(`/api/primeros-pasos${refrescar ? '?refrescar=1' : ''}`); } catch { el.hidden = true; return; }
+  if (!el.isConnected) return;
+  el.hidden = d.oculto; if (d.oculto) return;
+  el.classList.toggle('completo', d.completo);
+  el.innerHTML = htmlPrimeros(d);
+  const recargar = (o) => montarPrimeros(el, o);
+  el.querySelectorAll('[data-pp]').forEach((b) => { b.onclick = async () => {
+    const op = b.dataset.pp;
+    try {
+      if (op === 'ocultar') { await api('/api/primeros-pasos', { oculto: true }); el.hidden = true; aviso('Puedes volver a abrirlos desde Más › Primeros pasos'); }
+      if (op === 'comprobar') { b.disabled = true; await recargar({ refrescar: true }); aviso('Comprobado'); }
+      if (op === 'video') hojaPrimerVideo(() => recargar());
+      if (op === 'streamer') hojaNuevoStreamer();
+      if (op === 'tele-si' || op === 'tele-no') { await api('/api/telemetria', { activa: op === 'tele-si' }); aviso(op === 'tele-si' ? 'Gracias. Puedes cambiarlo en Ajustes › Servidor › Privacidad' : 'Entendido: no se envía nada'); recargar(); }
+      if (op === 'reportar') reportarProblema();
+      if (op === 'reintentar') { await api('/api/clips/reintentar', { id: Number(b.dataset.id) }); aviso('Vuelve a la cola'); recargar(); }
+    } catch (e) { errAviso(e); }
+  }; });
+  // Mientras el primer vídeo se recorta, la fase se actualiza sola.
+  const p3 = d.pasos.find((p) => p.id === 'procesando');
+  if (!d.completo && p3.video && !p3.hecho && p3.video.estado !== 'error') relojPrimeros = setTimeout(() => { if (['', '#/'].includes(location.hash) && $('#capa').hidden) recargar(); }, 5000);
+}
+function hojaPrimerVideo(alTerminar) {
+  hojaFormulario('Tu primer vídeo', [{ nombre: 'fuente', etiqueta: 'Enlace de YouTube, Twitch o Kick' }],
+    async (v) => {
+      if (!/^https?:\/\/\S+$/i.test(v.fuente)) throw new Error('Pega un enlace completo, que empiece por https://');
+      await api('/api/clips/videos', { fuente: v.fuente, tipo: 'general', urgente: true });
+      aviso('Recibido: empieza a recortarse'); alTerminar?.();
+    },
+    { boton: 'Recortar este vídeo', nota: 'Copia el enlace desde la barra del navegador. Un vídeo corto o un clip de Twitch tarda un par de minutos; uno largo, algo más: primero busca los mejores momentos y solo descarga esos.' });
+}
+
 async function vistaInicio(main) {
-  main.innerHTML = `<div class="inicio"><div class="columna-feed"><div class="historias" aria-label="Historias"></div><div class="feed"><p class="cargando">Cargando…</p></div></div><aside class="columna-der"></aside></div>`;
+  main.innerHTML = `<div class="inicio"><div class="columna-feed"><section class="primeros" aria-label="Primeros pasos" hidden></section><div class="historias" aria-label="Historias"></div><div class="feed"><p class="cargando">Cargando…</p></div></div><aside class="columna-der"></aside></div>`;
   const cargar = async () => {
     const [h, f] = await Promise.all([E.cuenta === 'canal' ? api('/api/social/historias') : Promise.resolve({ historias: [] }), api(`/api/social/feed?cuenta=${encodeURIComponent(E.cuenta)}`)]);
     const hs = h.historias;
@@ -302,6 +389,7 @@ async function vistaInicio(main) {
     feed.innerHTML = f.posts.length ? f.posts.map(tarjeta).join('') : `<div class="vacio">${I('check')}<p><b>Estás al día.</b><br>No hay nada que revisar ahora mismo.</p></div>`;
     conectarTarjetas(feed, f.posts, cargar);
   };
+  montarPrimeros($('.primeros', main));
   await cargar();
   columnaDerecha($('.columna-der', main));
 }
@@ -1828,6 +1916,7 @@ function pantallaClaveNueva() {
 // Recorrido guiado: resalta cada parte de la app con una explicación corta. Sale solo la primera vez (y desde Mi cuenta).
 const PASOS_TOUR = [
   { t: 'Bienvenido a StreamClipper', x: 'Un recorrido de un minuto por la app. Puedes saltarlo y volver a verlo en Ajustes › Mi cuenta.' },
+  { s: '.primeros', t: 'Primeros pasos', x: 'Esta lista te lleva hasta tu primer clip. Cada paso tiene un botón que abre justo lo que hay que hacer. La ocultas cuando quieras y vuelve desde Más.' },
   { s: '.nav-item[href="#/"]', t: 'Inicio', x: 'Lo que pide tu atención: clips por revisar, directos que se están grabando y propuestas del Estudio.' },
   { s: '.nav-item[href="#/explorar"]', t: 'Explorar', x: 'Todo el contenido en un sitio: clips, campañas, propuestas, vídeos largos y horizontales. Filtra por tipo o busca.' },
   { s: '.nav-item[href="#/reels"]', t: 'Reels', x: 'Revisa los clips a pantalla completa y di si sirven o no: la IA aprende de cada decisión.' },
@@ -1879,7 +1968,9 @@ function hojaMas() {
   const oscuro = (document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')) === 'dark';
   hoja('Más', [
     { texto: 'Ajustes', sub: 'Todo lo que decide la app, en un solo sitio', icono: 'ajustes', accion: () => { location.hash = '#/ajustes'; } },
+    ...(E.yo?.rol === 'dueno' ? [{ texto: 'Primeros pasos', sub: 'La lista guiada hasta tu primer clip', icono: 'check', accion: async () => { await api('/api/primeros-pasos', { oculto: false }); if (['', '#/'].includes(location.hash)) ruta(); else location.hash = '#/'; } }] : []),
     { texto: 'Cola de subida', sub: 'YouTube y TikTok, en orden', icono: 'enviar', accion: () => { location.hash = '#/subida'; } },
+    { texto: 'Reportar un problema', sub: 'Abre una incidencia en GitHub con el diagnóstico (la revisas antes de enviarla)', icono: 'alerta', accion: reportarProblema },
     { texto: 'Bolsa y recopilatorios', icono: 'largo', accion: () => { location.hash = '#/recopilatorios'; } },
     { texto: 'Estadísticas', sub: 'Qué funciona y la estrategia del canal', icono: 'grafica', accion: () => { location.hash = '#/estadisticas'; } },
     { texto: 'Servidor', sub: 'Salud, recursos y servicios', icono: 'grafica', accion: () => { location.hash = '#/sistema'; } },
@@ -1925,8 +2016,8 @@ async function ruta() {
 }
 
 // ---------- sesión ----------
-function pantallaLogin() {
-  $('#app').innerHTML = `<div class="login"><form><div class="marca">${LOGO}<span>StreamClipper</span></div><input name="usuario" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Usuario" aria-label="Usuario"><input name="clave" type="password" autocomplete="current-password" placeholder="Contraseña" aria-label="Contraseña" required><button type="submit">Entrar</button><div class="error" role="alert"></div><small class="muted">Si eres el dueño y entrabas solo con la contraseña, tu usuario es <b>admin</b>.</small></form></div>`;
+function pantallaLogin({ nueva = false } = {}) {
+  $('#app').innerHTML = `<div class="login"><form><div class="marca">${LOGO}<span>StreamClipper</span></div>${nueva ? '<p class="muted" style="margin:0"><b>Bienvenido.</b> Crea tu cuenta: elige un nombre de usuario y una contraseña de al menos 8 caracteres. Serás el dueño de esta instalación.</p>' : ''}<input name="usuario" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Usuario" aria-label="Usuario"><input name="clave" type="password" autocomplete="current-password" placeholder="Contraseña" aria-label="Contraseña" required><button type="submit">${nueva ? 'Crear mi cuenta' : 'Entrar'}</button><div class="error" role="alert"></div>${nueva ? '' : '<small class="muted">Si eres el dueño y entrabas solo con la contraseña, tu usuario es <b>admin</b>.</small>'}</form></div>`;
   const f = $('.login form'); f.elements.usuario.value = localStorage.getItem('ultimoUsuario') || ''; (f.elements.usuario.value ? f.elements.clave : f.elements.usuario).focus();
   f.onsubmit = async (e) => {
     e.preventDefault();
@@ -1937,7 +2028,7 @@ function pantallaLogin() {
 }
 async function arrancar() {
   const s = await fetch('/api/sesion').then((r) => r.json()).catch(() => ({}));
-  if (s.tieneClave && !s.autenticado) return pantallaLogin();
+  if (!s.autenticado) return pantallaLogin({ nueva: !s.tieneClave }); // instalación nueva: la primera cuenta es la del dueño
   E.yo = s.usuario || null;
   api('/api/cuentas').then((l) => { E.cuentasRed = l; }).catch(() => {});
   if (E.yo?.cambiarClave) return pantallaClaveNueva();
@@ -1945,7 +2036,7 @@ async function arrancar() {
   if (!E.cuentas.some((c) => c.id === E.cuenta)) E.cuenta = 'canal';
   try { const { eventos } = await api('/api/social/actividad'); hayActividad = !!eventos[0] && (!E.actividadVista || eventos[0].fecha > E.actividadVista); } catch {}
   pintarMarco(); ruta();
-  if (E.yo && !E.yo.tour) setTimeout(() => tourGuiado(), 900);
+  if (E.yo && !E.yo.tour) setTimeout(() => tourGuiado(), 1600);
 }
 window.addEventListener('hashchange', ruta);
 arrancar();

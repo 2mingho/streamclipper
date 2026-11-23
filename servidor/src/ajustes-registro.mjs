@@ -30,6 +30,9 @@ export const REGISTRO = [
   A('clips.activo', 'clips', 'General', 'Clips', 'bool', true, { maestro: true, ayuda: 'Apagado, no se recorta nada nuevo.' }),
   A('clips.solo_ia', 'clips', 'Recorte', 'Solo los momentos que marque Gemini', 'bool', true, { ayuda: 'Los vídeos esperan a la pasada de Gemini y se recortan exactamente sus momentos. Los clips de Twitch y lo añadido a mano pasan siempre.' }),
   A('clips.revisar_min', 'clips', 'Recorte', 'Mirar los streamers cada', 'num', 60, { min: 10, max: 1440, unidad: 'min' }),
+  A('clips.momentos_por_video', 'clips', 'Recorte', 'Clips por vídeo largo', 'num', 5, { min: 1, max: 20, unidad: 'clips', ayuda: 'De cada vídeo de más de un minuto se recortan los mejores momentos: los que marque una IA, lo más reproducido de YouTube o los picos de voz.' }),
+  A('clips.motor', 'clips', 'Recorte', 'Motor de recorte de vídeos largos', 'opcion', 'propio', { opciones: [['propio', 'Propio (solo FFmpeg y yt-dlp)'], ['openshorts', 'OpenShorts (servicio aparte)']], ayuda: 'OpenShorts es opcional: hay que instalarlo aparte y poner su dirección abajo.', nivel: 'avanzado' }),
+  A('clips.api', 'clips', 'Recorte', 'Dirección de OpenShorts', 'url', 'http://127.0.0.1:8000', { nivel: 'avanzado' }),
   A('clips.tramo_min', 'clips', 'Recorte', 'Directos: cortar un tramo cada', 'num', 30, { min: 5, max: 120, unidad: 'min', ...avz }),
   A('clips.desde', 'clips', 'Recorte', 'Sin Gemini: recortar desde', 'hora', '21:00', { ayuda: 'Solo cuenta si «Solo los momentos de Gemini» está apagado.', ...avz }),
   A('clips.hasta', 'clips', 'Recorte', 'Sin Gemini: recortar hasta', 'hora', '03:00', avz),
@@ -111,6 +114,7 @@ export const REGISTRO = [
   A('horario.dormir', 'servidor', 'Horario', 'Suspender a las', 'hora', '23:59'),
   A('servidor.disco_min_pct', 'servidor', 'Vigilancia', 'Avisar si a un disco le queda menos de', 'num', 10, { min: 2, max: 50, unidad: '% libre', ...avz }),
   A('servidor.temp_max', 'servidor', 'Vigilancia', 'Avisar si la temperatura pasa de', 'num', 88, { min: 60, max: 100, unidad: '°C', ...avz }),
+  A('telemetria.activa', 'servidor', 'Privacidad', 'Enviar datos anónimos de uso', 'bool', false, { ayuda: 'Versión, sistema, qué herramientas hay, qué pasos de «Primeros pasos» se completan y códigos de error. Nunca títulos, enlaces, nombres ni rutas. Detalle en TELEMETRY.md del repositorio. STREAMCLIPPER_TELEMETRIA=0 o DO_NOT_TRACK=1 la apagan siempre.' }),
   A('acelerador.activo', 'servidor', 'Laptop', 'Usar la laptop con GPU cuando esté encendida', 'bool', false),
 ];
 

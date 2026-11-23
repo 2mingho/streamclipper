@@ -34,7 +34,7 @@ export function usuarioInterno(req) {
 // Rutas que viven en el proceso de trabajos (colas, procesos y estados en memoria, o trabajos largos).
 const PREFIJOS = ['/api/acelerador', '/api/editor', '/api/recop', '/api/operaciones', '/api/cuentas/youtube/', '/api/tiktok/',
   '/api/energia/', '/api/estadisticas/actualizar'];
-const EXACTAS = new Set(['GET /api/pendientes', 'GET /api/sistema', 'GET /api/sistema/alertas', 'GET /api/acelerador', 'POST /api/acelerador']);
+const EXACTAS = new Set(['GET /api/primeros-pasos', 'GET /api/diagnostico', 'GET /api/pendientes', 'GET /api/sistema', 'GET /api/sistema/alertas', 'GET /api/acelerador', 'POST /api/acelerador']);
 const CLIPS_LOCALES = new Set(['/api/clips/valorar', '/api/clips/recuperar']);
 export function deTrabajos(metodo, p) {
   if (ROL !== 'web') return false;

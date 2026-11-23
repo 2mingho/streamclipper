@@ -65,6 +65,13 @@ export const AJUSTES_POR_DEFECTO = {
   'avisos.token': '',
   'avisos.panel': '',                     // al tocar el aviso se abre esta dirección (el panel)
   'panel.clave_hash': '',
+  'primeros_pasos.oculto': false,        // la lista «Primeros pasos» de Inicio, plegada por el dueño
+  // Telemetría opcional (src/telemetria.mjs, TELEMETRY.md): id aleatorio de la instalación y qué se contó ya.
+  'telemetria.preguntado': false,
+  'telemetria.id': '',
+  'telemetria.pasos': [],
+  'telemetria.clips': 0,
+  'telemetria.dia': '',
 };
 
 // Los ajustes del registro único (src/ajustes-registro.mjs) también se pueden guardar.

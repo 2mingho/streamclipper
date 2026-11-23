@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Primeros pasos · StreamClipper</title>
+<style>
+@font-face{font-family:Barlow;font-weight:400;src:url(fuentes/barlow-400.woff2)}
+@font-face{font-family:Barlow;font-weight:500;src:url(fuentes/barlow-500.woff2)}
+@font-face{font-family:Barlow;font-weight:600;src:url(fuentes/barlow-600.woff2)}
+@font-face{font-family:Barlow;font-weight:700;src:url(fuentes/barlow-700.woff2)}
+@page{size:A4;margin:0}
+:root{--tinta:#0b0d10;--pizarra:#171b21;--papel:#f6f5f0;--hilo:#d9d7cd;--gris:#5a5f68;--marca:#fadf25}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{font-family:Barlow,sans-serif;color:var(--tinta);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pag{position:relative;width:210mm;height:297mm;overflow:hidden;background:var(--papel);padding:17mm 16mm 20mm;break-after:page}
+.pag:last-child{break-after:auto}
+.osc{background:var(--tinta);color:#f2f2ee}
+.folio{position:absolute;left:16mm;right:16mm;bottom:9mm;display:flex;justify-content:space-between;font-size:8.5pt;color:var(--gris);border-top:.3mm solid var(--hilo);padding-top:2.5mm}
+.osc .folio{color:#9299a3;border-color:#2b3038}
+.seccion{display:inline-block;background:var(--marca);color:var(--tinta);font-weight:600;font-size:10pt;padding:1mm 3mm;margin-bottom:6mm}
+h1{font-weight:600;font-size:34pt;line-height:1.02;letter-spacing:-.02em;margin-bottom:5mm}
+h2{font-weight:600;font-size:13pt;line-height:1.15;margin-bottom:1.5mm}
+h3{font-weight:600;font-size:11.5pt;margin:4mm 0 1.5mm}
+p,li{font-size:11pt;line-height:1.45}
+.entrada{font-size:14pt;line-height:1.3;font-weight:500;margin-bottom:7mm;max-width:165mm}
+.ley{display:flex;gap:3mm;margin-bottom:4mm}
+.num{flex:none;width:7mm;height:7mm;border-radius:50%;background:var(--marca);color:var(--tinta);font-weight:700;font-size:10pt;display:grid;place-items:center;box-shadow:0 0 0 .4mm var(--tinta)}
+.ley p{font-size:10.5pt;line-height:1.38}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:8mm}
+.cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:6mm}
+figure img{display:block;width:100%;border-radius:2mm}
+figcaption{font-size:9pt;color:var(--gris);margin-top:2mm}
+.osc figcaption{color:#9299a3}
+.caja{background:var(--tinta);color:#f2f2ee;padding:6mm;border-radius:2mm}
+.caja h2{color:var(--marca)}
+.caja p{font-size:10.2pt;margin-bottom:2.2mm}
+.recorte img{object-fit:cover;object-position:top}
+.chico{font-size:9pt!important;color:var(--gris)}
+.banda{position:absolute;left:16mm;right:16mm;bottom:20mm;background:var(--marca);color:var(--tinta);padding:6mm 8mm;font-size:18pt;line-height:1.12;font-weight:600}
+.banda small{display:block;font-size:10.5pt;font-weight:500;line-height:1.3;margin-top:2mm}
+code{font-family:Barlow,sans-serif;font-weight:600;background:rgba(11,13,16,.08);padding:.2mm 1.2mm;border-radius:1mm}
+.osc code{background:rgba(255,255,255,.1)}
+pre{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:8.6pt;line-height:1.45;background:var(--tinta);color:#f2f2ee;padding:3mm 4mm;border-radius:1.5mm;margin:1.5mm 0 3mm;white-space:pre-wrap;word-break:normal;overflow-wrap:anywhere}
+.osc pre{background:var(--pizarra)}
+.so h2{display:flex;justify-content:space-between;align-items:baseline;border-bottom:.4mm solid var(--tinta);padding-bottom:1mm;margin-bottom:2mm}
+.so h2 small{font-size:9pt;font-weight:500;color:var(--gris)}
+.so p{font-size:10pt;line-height:1.4}
+.lista{padding-left:5mm}
+.lista li{font-size:10.5pt;margin-bottom:1.5mm}
+.portada{padding:0;display:flex;flex-direction:column;justify-content:space-between}
+.portada .sup{padding:17mm 16mm 0;display:flex;justify-content:space-between;align-items:center;font-size:10.5pt;color:#c9ccd2}
+.portada .logo{display:flex;align-items:center;gap:3mm;font-size:15pt;font-weight:600;color:#f2f2ee}
+.portada .logo i{width:9mm;height:9mm;border-radius:2mm;background:#ffc83d;display:grid;place-items:center}
+.portada .logo i::after{content:"";border-left:3mm solid var(--tinta);border-top:2mm solid transparent;border-bottom:2mm solid transparent;margin-left:.8mm}
+.portada .tit{padding:0 16mm}
+.portada .edicion{font-size:14pt;font-weight:500;color:var(--marca);margin-bottom:6mm}
+.portada .gran{font-size:62pt;line-height:.95;font-weight:600;letter-spacing:-.03em}
+.portada .gran span{color:var(--marca)}
+.portada .baj{background:var(--marca);color:var(--tinta);padding:9mm 16mm 10mm}
+.portada .baj p{font-size:14pt;line-height:1.22;font-weight:500;max-width:150mm}
+</style>
+</head>
+<body>
+
+<section class="pag osc portada">
+  <div class="sup"><span class="logo"><i></i>StreamClipper</span><span>Manual · Primeros pasos</span></div>
+  <div class="tit">
+    <p class="edicion">Para quien empieza de cero</p>
+    <p class="gran">Tu primer <span>clip</span>, paso a paso</p>
+  </div>
+  <div class="baj"><p>Instala StreamClipper en tu ordenador, pégale el enlace de un vídeo y revisa tu primer clip vertical. Sin saber programar.</p></div>
+</section>
+
+<section class="pag">
+  <span class="seccion">Qué es</span>
+  <h1>De un directo a un clip vertical, solo.</h1>
+  <p class="entrada">StreamClipper es un programa que instalas en tu ordenador. Le das el enlace de un vídeo o de un directo y él busca los mejores momentos, los recorta en vertical, les pone texto y te los enseña para que digas si sirven.</p>
+  <div class="ley"><span class="num">1</span><div><h2>Funciona en tu ordenador</h2><p>No es una web de otra empresa: tus vídeos, tus clips y tus cuentas se quedan contigo. Lo abres en el navegador, como una página más.</p></div></div>
+  <div class="ley"><span class="num">2</span><div><h2>Tú decides qué sirve</h2><p>Cada clip pasa por ti: «Sirve» o «No sirve». Con cada respuesta, la app aprende qué te gusta.</p></div></div>
+  <div class="ley"><span class="num">3</span><div><h2>Después, trabaja solo</h2><p>Cuando le añades streamers, mira sus vídeos nuevos y prepara clips mientras tú haces otra cosa. Publicar en YouTube o TikTok es opcional.</p></div></div>
+  <h3>Qué vas a lograr con este manual</h3>
+  <p>En unos 20 minutos: tener StreamClipper funcionando, crear tu cuenta y revisar tu primer clip. Cada paso dice qué escribir y qué deberías ver.</p>
+  <div class="banda">Unos 20 minutos, de cero a tu primer clip.<small>La mayor parte es esperar a que se descarguen las herramientas. No hace falta saber programar: solo copiar y pegar unas pocas órdenes.</small></div>
+  <div class="folio"><span>StreamClipper · Primeros pasos</span><span>2</span></div>
+</section>
+
+<section class="pag">
+  <span class="seccion">Qué necesitas</span>
+  <h1>Tres herramientas gratuitas</h1>
+  <p class="entrada">Un ordenador con Windows 10/11, macOS o Linux, conexión a internet y unos 5 GB libres. StreamClipper usa tres programas gratuitos:</p>
+  <div class="cols3" style="margin-bottom:6mm">
+    <div><h2>Node.js 22.13+</h2><p class="chico">Hace funcionar StreamClipper.</p></div>
+    <div><h2>FFmpeg</h2><p class="chico">Corta, encuadra y monta los clips.</p></div>
+    <div><h2>yt-dlp</h2><p class="chico">Descarga los vídeos de YouTube, Twitch y Kick.</p></div>
+  </div>
+  <p style="margin-bottom:5mm">Las órdenes se escriben en la <b>terminal</b>: una ventana donde pegas texto y pulsas Intro. Cópialas tal cual, una por una. Si te pide tu contraseña del ordenador, escríbela (no se ve mientras escribes) y pulsa Intro.</p>
+  <div class="so">
+    <h2>Windows <small>con WSL (Linux dentro de Windows)</small></h2>
+    <p>El recorte de StreamClipper funciona en Linux y macOS. En Windows se usa con WSL, que Microsoft incluye gratis y se instala con una sola orden.</p>
+    <div class="ley" style="margin-top:3mm"><span class="num">1</span><div><p>Pulsa Inicio, escribe <b>PowerShell</b>, clic derecho › <b>Ejecutar como administrador</b>, y pega:</p><pre>wsl --install -d Ubuntu</pre></div></div>
+    <div class="ley"><span class="num">2</span><div><p>Reinicia el ordenador. Al volver se abre la ventana de <b>Ubuntu</b>: elige un nombre de usuario y una contraseña (apúntala).</p></div></div>
+    <div class="ley"><span class="num">3</span><div><p>A partir de aquí, todo se escribe en esa ventana de Ubuntu (búscala en Inicio). Sigue los pasos de <b>Linux (Ubuntu)</b> de la página siguiente.</p></div></div>
+  </div>
+  <div class="banda">¿Ya tienes las tres? Salta a la página 5.<small>Para saber si una ya está, mira «Comprueba que funcionan», en la página siguiente.</small></div>
+  <div class="folio"><span>StreamClipper · Primeros pasos</span><span>3</span></div>
+</section>
+
+<section class="pag">
+  <span class="seccion">Qué necesitas</span>
+  <h1>Instálalas en macOS o Linux</h1>
+  <div class="cols">
+    <div class="so">
+      <h2>macOS <small>con Homebrew</small></h2>
+      <p>Abre <b>Terminal</b> (Aplicaciones › Utilidades). Instala Homebrew, el instalador de programas más usado en Mac:</p>
+      <pre>/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"</pre>
+      <p>Cuando termine, copia las dos órdenes que te enseña en «Next steps» y luego:</p>
+      <pre>brew install node ffmpeg yt-dlp</pre>
+    </div>
+    <div class="so">
+      <h2>Linux (Ubuntu, Debian, WSL) <small>con apt</small></h2>
+      <p>Node.js 22 desde su repositorio oficial, FFmpeg desde Ubuntu y yt-dlp, siempre al día, desde su web:</p>
+      <pre>curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt install -y nodejs ffmpeg git
+sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
+sudo chmod a+rx /usr/local/bin/yt-dlp</pre>
+      <h2 style="margin-top:3mm">Arch, Manjaro, CachyOS <small>con pacman</small></h2>
+      <pre>sudo pacman -S nodejs npm ffmpeg yt-dlp git</pre>
+    </div>
+  </div>
+  <h3 style="margin-top:6mm">Comprueba que funcionan</h3>
+  <p style="margin-bottom:2mm">Escribe cada orden. Si ves un número de versión, está instalada. Si ves «command not found», repite su paso.</p>
+  <div class="cols3">
+    <div><pre>node -v</pre><p class="chico">Debe decir v22.13 o más.</p></div>
+    <div><pre>ffmpeg -version</pre><p class="chico">Primera línea: «ffmpeg version …».</p></div>
+    <div><pre>yt-dlp --version</pre><p class="chico">Una fecha, como 2026.11.20.</p></div>
+  </div>
+  <div class="banda">Opcional: Whisper.<small>Pone subtítulos automáticos palabra a palabra. Sin él ya puedes hacer clips, solo que salen sin subtítulos. La app te dice si lo tienes.</small></div>
+  <div class="folio"><span>StreamClipper · Primeros pasos</span><span>4</span></div>
+</section>
+
+<section class="pag">
+  <span class="seccion">Instalar StreamClipper</span>
+  <h1>Descárgalo y arráncalo</h1>
+  <p class="entrada">En la misma terminal. Elige una de las dos formas de descargarlo:</p>
+  <div class="ley"><span class="num">1</span><div><h2>Descárgalo con git (recomendado)</h2><pre>git clone https://github.com/2mingho/streamclipper.git
+cd streamclipper/servidor</pre><p class="chico">O sin git: descarga el ZIP desde github.com/2mingho/streamclipper (botón verde «Code» › «Download ZIP»), descomprímelo y entra en su carpeta <code>servidor</code> con <code>cd</code>.</p></div></div>
+  <div class="ley"><span class="num">2</span><div><h2>Instala lo que necesita</h2><pre>npm install</pre><p>Tarda un minuto. Al final verás «added … packages». Los avisos amarillos («warn») son normales.</p></div></div>
+  <div class="ley"><span class="num">3</span><div><h2>Arráncalo</h2><pre>npm start</pre><p>Deberías ver:</p><pre>StreamClipper en http://127.0.0.1:8790  ·  modelos: http://127.0.0.1:1234
+Papel del proceso: todo</pre><p>Si falta FFmpeg o yt-dlp, aquí aparece un «Aviso» que dice cuál. Deja esta ventana abierta: si la cierras, StreamClipper se apaga.</p></div></div>
+  <div class="ley"><span class="num">4</span><div><h2>Ábrelo en el navegador</h2><p>Chrome, Edge, Firefox o Safari, en la dirección <code>http://127.0.0.1:8790</code>. Para volver otro día: abre la terminal, <code>cd streamclipper/servidor</code> y <code>npm start</code>.</p></div></div>
+  <div class="banda">Tus datos se quedan en tu ordenador.<small>Todo se guarda en la carpeta servidor/datos: vídeos, clips y ajustes. Para empezar de cero, para StreamClipper y borra esa carpeta.</small></div>
+  <div class="folio"><span>StreamClipper · Primeros pasos</span><span>5</span></div>
+</section>
+
+<section class="pag">
+  <span class="seccion">Primer inicio</span>
+  <h1>Crea tu cuenta</h1>
+  <p class="entrada">La primera vez, StreamClipper te pide un usuario y una contraseña. Esa primera cuenta es la del dueño: puede cambiarlo todo y, más adelante, invitar a su equipo.</p>
+  <div class="cols">
+    <div>
+      <div class="ley"><span class="num">1</span><div><h2>Elige usuario y contraseña</h2><p>La contraseña necesita al menos 8 caracteres. Apúntala: no hay correo para recuperarla.</p></div></div>
+      <div class="ley"><span class="num">2</span><div><h2>Pulsa «Crear mi cuenta»</h2><p>Entras directamente en Inicio.</p></div></div>
+      <div class="ley"><span class="num">3</span><div><h2>Haz el recorrido de un minuto</h2><p>Un recorrido guiado señala cada parte de la app. Puedes saltarlo y volver a verlo en Ajustes › Mi cuenta.</p></div></div>
+    </div>
+    <figure style="width:62mm;justify-self:center"><img src="capturas/crear-cuenta.png" alt="Pantalla para crear la cuenta del dueño"><figcaption>La pantalla del primer inicio.</figcaption></figure>
+  </div>
+  <figure class="recorte" style="margin-top:6mm;width:150mm"><img style="height:88mm" src="capturas/tour.png" alt="Recorrido guiado señalando la lista Primeros pasos"><figcaption>El recorrido guiado señala la lista «Primeros pasos», tu guía hasta el primer clip.</figcaption></figure>
+  <div class="folio"><span>StreamClipper · Primeros pasos</span><span>6</span></div>
+</section>
+
+<section class="pag">
+  <span class="seccion">Tu primera sesión</span>
+  <h1>Sigue la lista «Primeros pasos»</h1>
+  <p class="entrada">En Inicio verás una lista con cuatro pasos y dos opcionales. Cada uno se marca solo cuando está hecho y tiene un botón que te lleva justo donde hay que ir.</p>
+  <div class="cols">
+    <figure class="recorte"><img style="height:150mm" src="capturas/lista-inicio.png" alt="Lista Primeros pasos recién creada la cuenta"><figcaption>La lista recién creada la cuenta: las herramientas ya están.</figcaption></figure>
+    <div>
+      <div class="ley"><span class="num">1</span><div><h2>Herramientas</h2><p>Comprueba FFmpeg y yt-dlp. Si falta alguna, «Cómo instalarlo» abre este manual en su página. Tras instalarla, pulsa «Comprobar».</p></div></div>
+      <div class="ley"><span class="num">2</span><div><h2>Tu primer vídeo</h2><p>Pulsa «Pegar un enlace». En otra pestaña, abre el vídeo en YouTube, Twitch o Kick y copia la dirección de arriba del navegador. Pégala y pulsa «Recortar este vídeo».</p></div></div>
+      <figure style="margin:1mm 0 3mm 10mm"><img src="capturas/hoja-video.png" alt="Ventana para pegar el enlace del primer vídeo"><figcaption>Pega el enlace (en la captura, uno de ejemplo).</figcaption></figure>
+      <p class="chico" style="margin-left:10mm">Sirve un vídeo largo o un directo ya terminado: StreamClipper elige sus mejores momentos (lo más reproducido de YouTube o los picos de voz) y solo descarga esos. Un vídeo corto tarda un par de minutos; uno largo, algo más.</p>
+    </div>
+  </div>
+  <div class="folio"><span>StreamClipper · Primeros pasos</span><span>7</span></div>
+</section>
+
+<section class="pag">
+  <span class="seccion">Tu primera sesión</span>
+  <h1>Espera y revisa tu clip</h1>
+  <div class="cols">
+    <div>
+      <div class="ley"><span class="num">3</span><div><h2>Procesando</h2><p>La lista enseña la fase real del vídeo: buscando los mejores momentos, descargando, montando cada clip. Se actualiza sola cada pocos segundos; no hace falta recargar. Si algo falla, dice qué pasó y te da «Reintentar».</p></div></div>
+      <figure class="recorte" style="margin-bottom:6mm"><img style="height:112mm" src="capturas/procesando.png" alt="Paso Procesando con la fase del vídeo"><figcaption>La fase del vídeo, en directo.</figcaption></figure>
+      <figure><img src="capturas/completado.png" alt="Primeros pasos completados"><figcaption>Lista completa. La ocultas con «Ocultar» y vuelve desde Más › Primeros pasos.</figcaption></figure>
+    </div>
+    <div>
+      <div class="ley"><span class="num">4</span><div><h2>Revisa tu primer clip</h2><p>Cuando termina, pulsa «Abrir mi primer clip». Míralo y elige «Sirve» (corazón) o «No sirve». Con eso, la lista queda completa.</p></div></div>
+      <figure style="width:66mm;margin-left:10mm"><img src="capturas/reel.png" alt="Revisión del clip a pantalla completa con Sirve y No"><figcaption>Revisión del clip: «Sirve», «No» o una nota.</figcaption></figure>
+      <h3 style="margin-left:10mm">¿Datos anónimos?</h3>
+      <p style="margin-left:10mm;font-size:10.5pt">Al final de la lista te preguntamos si quieres enviar datos anónimos de uso. Está apagado si no dices que sí, y nunca incluye títulos, enlaces ni nombres (TELEMETRY.md).</p>
+      <h3 style="margin-left:10mm">Lo siguiente</h3>
+      <p style="margin-left:10mm;font-size:10.5pt">Paso 5, «Añadir streamer»: StreamClipper mirará sus vídeos nuevos y te preparará clips solo.</p>
+    </div>
+  </div>
+  <div class="folio"><span>StreamClipper · Primeros pasos</span><span>8</span></div>
+</section>
+
+<section class="pag">
+  <span class="seccion">Publicar (opcional)</span>
+  <h1>YouTube y TikTok, con tu propia app</h1>
+  <p class="entrada">StreamClipper publica en tu nombre, así que YouTube y TikTok te piden registrar una «app» propia y gratuita. Es la parte más pesada de todo el proceso, pero solo se hace una vez.</p>
+  <div class="cols">
+    <div>
+      <h2>YouTube</h2>
+      <div class="ley"><span class="num">1</span><div><p>En Google Cloud Console crea un proyecto, activa «YouTube Data API v3» y configura la pantalla de permisos como «Externo».</p></div></div>
+      <div class="ley"><span class="num">2</span><div><p>Crea un cliente OAuth de tipo «App de escritorio» y descarga su archivo JSON.</p></div></div>
+      <div class="ley"><span class="num">3</span><div><p>En StreamClipper: Ajustes › Publicación › «Conectar un canal de YouTube». La app te guía, te deja pegar ese JSON y abre la autorización de Google.</p></div></div>
+      <p class="chico">Mientras tu app esté «en prueba», añade tu correo como usuario de prueba. Google pide renovar ese permiso cada 7 días.</p>
+    </div>
+    <div>
+      <h2>TikTok</h2>
+      <div class="ley"><span class="num">1</span><div><p>Crea una app en el portal de desarrolladores de TikTok con «Content Posting API».</p></div></div>
+      <div class="ley"><span class="num">2</span><div><p>Guarda su clave, su secreto y su dirección de retorno (https) en <code>~/.config/streamclipper-tiktok/app.json</code> y pulsa «Conectar TikTok» en Ajustes › Publicación.</p></div></div>
+      <p class="chico">Hasta que TikTok revise tu app, solo puedes publicar en privado («Solo yo»).</p>
+    </div>
+  </div>
+  <div class="banda">Sin publicar también sirve.<small>Cada clip tiene «Descargar el vídeo» en su menú «…»: lo subes a mano desde el móvil. Conectar cuentas solo automatiza ese último paso.</small></div>
+  <div class="folio"><span>StreamClipper · Primeros pasos</span><span>9</span></div>
+</section>
+
+<section class="pag osc">
+  <span class="seccion">Desde el móvil (opcional)</span>
+  <h1>Revisa tus clips desde el sofá</h1>
+  <p class="entrada">StreamClipper solo se abre en tu ordenador para que nadie más pueda entrar. Para usarlo también desde el móvil, la forma más segura y sencilla es Tailscale: una red privada entre tus dispositivos, gratis para uso personal.</p>
+  <div class="ley"><span class="num">1</span><div><h2 style="color:#fadf25">Instala Tailscale en los dos</h2><p style="color:#c9ccd2">En el ordenador (tailscale.com/download) y en el móvil (App Store o Google Play). Entra con la misma cuenta en ambos.</p><p class="chico" style="color:#9299a3!important;margin-top:1.5mm">En Windows con WSL, instálalo también dentro de Ubuntu:</p><pre>curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up</pre></div></div>
+  <div class="ley"><span class="num">2</span><div><h2 style="color:#fadf25">Abre StreamClipper a tu red privada</h2><p style="color:#c9ccd2">Para StreamClipper (Ctrl + C en su ventana) y arráncalo así:</p><pre>HOST=0.0.0.0 npm start</pre></div></div>
+  <div class="ley"><span class="num">3</span><div><h2 style="color:#fadf25">Entra desde el móvil</h2><p style="color:#c9ccd2">En la app de Tailscale verás la dirección de tu ordenador (empieza por 100.). Abre en el navegador del móvil <code>http://esa-dirección:8790</code> y entra con tu usuario.</p></div></div>
+  <div class="banda">Nunca lo abras a todo internet.<small>Con HOST=0.0.0.0 lo ve cualquiera de tu red local (tu wifi). Si tu wifi es compartido, usa Tailscale y un cortafuegos, o déjalo en 127.0.0.1.</small></div>
+  <div class="folio"><span>StreamClipper · Primeros pasos</span><span>10</span></div>
+</section>
+
+<section class="pag">
+  <span class="seccion">Si algo no funciona</span>
+  <h1>Los seis problemas más comunes</h1>
+  <div class="caja">
+    <h2>Problema y solución</h2>
+    <p><b>«command not found» al escribir node, ffmpeg o yt-dlp:</b> esa herramienta no está instalada o la terminal se abrió antes de instalarla. Cierra la terminal, ábrela de nuevo y repite su paso de la página 4.</p>
+    <p><b>«node: v18…» o npm install falla con errores de versión:</b> tu Node.js es antiguo. Instala la versión 22 con los pasos de la página 4 y comprueba con <code>node -v</code>.</p>
+    <p><b>«EADDRINUSE» al hacer npm start:</b> StreamClipper ya está abierto en otra ventana, u otro programa usa el puerto 8790. Ciérralo, o usa otro puerto: <code>PORT=8791 npm start</code> y abre <code>http://127.0.0.1:8791</code>.</p>
+    <p><b>El navegador dice «no se puede acceder al sitio»:</b> la ventana de la terminal con StreamClipper está cerrada. Vuelve a arrancarlo (página 5) y recarga.</p>
+    <p><b>Un vídeo largo pasa mucho rato «En marcha»:</b> es normal en vídeos de horas: primero lee lo más reproducido o escucha todo el audio para encontrar los momentos, y después descarga solo esos. Mira la fase en «Primeros pasos» o en Cola.</p>
+    <p style="margin:0"><b>El vídeo falla al descargar («HTTP Error 403», «Sign in to confirm»):</b> yt-dlp necesita actualizarse, porque las webs cambian a menudo. Repite su instalación (en macOS, <code>brew upgrade yt-dlp</code>) y pulsa «Reintentar».</p>
+  </div>
+  <h3 style="margin-top:6mm">¿Olvidaste la contraseña?</h3>
+  <p>Con StreamClipper parado, en la carpeta <code>servidor</code>: <code>node herramientas/clave-dueno.mjs tu-usuario</code> te deja escribir una nueva.</p>
+  <div class="banda">¿Sigue sin funcionar?<small>Más › Reportar un problema abre una incidencia en github.com/2mingho/streamclipper ya rellenada con el diagnóstico, sin datos personales. La revisas y añades lo que pasó antes de enviarla.</small></div>
+  <div class="folio"><span>StreamClipper · Primeros pasos</span><span>11</span></div>
+</section>
+
+</body>
+</html>

@@ -546,7 +546,8 @@ export async function postprocesar({ videoId, tipo, job, clips, logs = [], cierr
   // Encuadre propio «juego + cara» (juegos y reacciones con la grabación a mano): ventana ajustada a los picos del chat,
   // clips extra para los picos que nadie recogió, textos verificados con fotogramas y composición desde la grabación.
   const grabacion = [fuenteLocal, fuente].find((f) => f && existsSync(f));
-  const propio = ['gaming', 'reaccion'].includes(tipo) && grabacion;
+  // También los clips cortos sin OpenShorts (no traen clip montado): sin encuadre propio no habría nada que montar.
+  const propio = grabacion && (['gaming', 'reaccion'].includes(tipo) || clips.every((c) => !c.archivo));
   // Webcam y cara medidas sobre la grabación (la caja de OpenShorts a veces no coincide); si no se puede, la de OpenShorts.
   // Encuadre aprendido del canal (lo último que el editor dejó al editar un clip suyo) antes que detectar otra vez.
   let aprendida = null;
@@ -674,7 +675,7 @@ export async function postprocesar({ videoId, tipo, job, clips, logs = [], cierr
     // Canal sin cámara (avatar, p. ej. TheBurntPeanut): no se exige cara, solo que no haya franjas negras.
     const modo = sinCara ? 'libre' : (c.post || []).includes('encuadre') ? (c.camFuera ? 'abajo-sincam' : 'abajo') : tipo === 'reaccion' ? 'cara' : 'libre';
     try {
-      const salida = await new Promise((ok, mal) => execFile(path.join(RAIZ, '..', 'estudio', 'venv-cv', 'bin', 'python'), [path.join(RAIZ, 'herramientas', 'qa_encuadre.py'), f, modo],
+      const salida = await new Promise((ok, mal) => execFile(PYTHON_CV, [path.join(RAIZ, 'herramientas', 'qa_encuadre.py'), f, modo],
         { timeout: 90000 }, (e, so) => (e ? mal(e) : ok(so))));
       return { ...JSON.parse(String(salida).trim().split('\n').pop()), modo };
     } catch (e) { log(`Clips: revisión de encuadre del clip ${c.n} falló (${e.message})`); return null; }
@@ -709,7 +710,7 @@ export async function postprocesar({ videoId, tipo, job, clips, logs = [], cierr
     const f = archivoDe(c);
     if (!f || !c.logoPos || !(c.post || []).includes('logo')) { c.qaLogo = { ok: false, motivo: 'sin capa de logo' }; continue; }
     try {
-      const so = await new Promise((ok, mal) => execFile(path.join(RAIZ, '..', 'estudio', 'venv-cv', 'bin', 'python'),
+      const so = await new Promise((ok, mal) => execFile(PYTHON_CV,
         [path.join(RAIZ, 'herramientas', 'qa_logo.py'), f, logo.archivo, String(c.logoPos.x), String(c.logoPos.y), String(c.logoPos.w), String(c.logoPos.h)],
         { timeout: 180000 }, (e, o) => (e ? mal(e) : ok(o))));
       c.qaLogo = JSON.parse(String(so).trim().split('\n').pop());
@@ -733,7 +734,7 @@ export async function ponerLogoYRevisar(f, logoCfg, posPrevia = null) {
   renameSync(tmp, f);
   let qaLogo;
   try {
-    const so = await new Promise((ok, mal) => execFile(path.join(RAIZ, '..', 'estudio', 'venv-cv', 'bin', 'python'),
+    const so = await new Promise((ok, mal) => execFile(PYTHON_CV,
       [path.join(RAIZ, 'herramientas', 'qa_logo.py'), f, logo.archivo, String(pos.x), String(pos.y), String(pos.w), String(pos.h)], { timeout: 180000 }, (e, o) => (e ? mal(e) : ok(o))));
     qaLogo = JSON.parse(String(so).trim().split('\n').pop());
   } catch (e) { qaLogo = { ok: false, motivo: `revisión fallida: ${String(e.message).slice(0, 120)}` }; }

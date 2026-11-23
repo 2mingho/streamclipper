@@ -600,3 +600,31 @@ button.bt-fila:hover { background: var(--elevada); }
 .bt-filas > div { grid-template-columns: 6.5em minmax(0, 1fr) auto; }
 .bt-filas > div > span:nth-child(3) { min-width: 4.5em; }
 .bt-red .bt-filas > div { grid-template-columns: 5.5em minmax(0, 1fr) minmax(0, 1fr); }
+
+/* ---------- primeros pasos (Inicio, solo el dueño) ---------- */
+.primeros { border: 1px solid var(--borde); background: var(--superficie); border-radius: var(--radio); padding: 16px 16px 6px; margin: 8px 0 18px; }
+.primeros.completo { padding-bottom: 14px; }
+.primeros-cab { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; }
+.primeros-cab b { font-size: 16px; }
+.primeros .enlace { color: var(--suave); font-size: 13px; padding: 2px 0; }
+.progreso-pp { height: 4px; border-radius: 99px; background: var(--borde); overflow: hidden; margin: 12px 0 4px; }
+.progreso-pp i { display: block; height: 100%; background: var(--acento); border-radius: inherit; transition: width var(--t); }
+.pasos-pp { list-style: none; margin: 0; padding: 0; }
+.pasos-pp .paso { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 4px 12px; padding: 12px 0; border-top: 1px solid var(--borde); }
+.pasos-pp .paso:first-child { border-top: 0; }
+.pasos-pp .marca-paso { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 13px; background: var(--acento); color: var(--sobre-acento); }
+.pasos-pp .marca-paso .icono { width: 16px; height: 16px; stroke-width: 2.5; }
+.pasos-pp .paso.hecho .marca-paso { background: var(--verde); color: #fff; }
+.pasos-pp .paso.opcional:not(.hecho) .marca-paso { background: var(--elevada); color: var(--suave); border: 1px solid var(--borde); }
+.pasos-pp .paso.hecho .txt > b { color: var(--suave); }
+.pasos-pp .detalle { color: var(--suave); margin-top: 2px; font-size: 13.5px; }
+.pasos-pp .detalle .fase { color: var(--texto); font-weight: 600; }
+.pasos-pp .botones { grid-column: 2; display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.pasos-pp .chip-estado { font-size: 11px; padding: 1px 7px; margin-left: 4px; }
+.herr { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 2px; font-size: 13px; }
+.herr li { display: flex; gap: 8px; align-items: baseline; }
+.punto-estado { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--borde); transform: translateY(-1px); }
+.punto-estado.ok { background: var(--verde); }
+.tele-pp { display: grid; gap: 8px; border-top: 1px solid var(--borde); margin-top: 6px; padding: 12px 0 8px; }
+.tele-pp a { color: var(--acento-2); text-decoration: underline; }
+.tele-pp .botones { display: flex; gap: 8px; flex-wrap: wrap; }

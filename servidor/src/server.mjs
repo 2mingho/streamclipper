@@ -33,6 +33,8 @@ import * as Cuentas from './cuentas-red.mjs';
 import * as Version from './app-version.mjs';
 import * as Rol from './rol.mjs';
 import * as Recursos from './recursos.mjs';
+import * as PrimerosPasos from './primeros-pasos.mjs';
+import * as Telemetria from './telemetria.mjs';
 import { estadoSistema, registroServicio, reiniciarServicio } from './sistema.mjs';
 
 columnasPendientes(); // instalación nueva: columnas que esperaban a que otro módulo creara su tabla
@@ -382,6 +384,12 @@ const rutas = {
   'POST /api/clips/recuperar': async (req) => { const b = await leerJson(req); return Prefiltro.recuperar(b.id, b.n); },
   'GET /api/clips/prefiltro': () => Prefiltro.resumen(),
   // Equipo y mi cuenta (fase 9)
+  // Primeros pasos (solo el dueño): estado de cada paso hasta el primer clip revisado, y plegar o volver a abrir la lista.
+  'GET /api/primeros-pasos': (req, url) => { if (req.usuario?.rol !== 'dueno') throw new Error('Eso solo lo puede ver el dueño'); return PrimerosPasos.estado({ refrescar: url.searchParams.get('refrescar') === '1' }); },
+  'POST /api/primeros-pasos': async (req) => { if (req.usuario?.rol !== 'dueno') throw new Error('Eso solo lo puede hacer el dueño'); return PrimerosPasos.ocultar((await leerJson(req)).oculto); },
+  // Telemetría opcional (solo el dueño decide) y diagnóstico sin datos personales para «Reportar un problema».
+  'POST /api/telemetria': async (req) => { if (req.usuario?.rol !== 'dueno') throw new Error('Eso solo lo puede decidir el dueño'); const r = Telemetria.cambiar(!!(await leerJson(req)).activa); if (r.activa) Telemetria.iniciada(await PrimerosPasos.herramientasMapa()); return r; },
+  'GET /api/diagnostico': () => PrimerosPasos.diagnostico(),
   'GET /api/yo': (req) => req.usuario,
   'POST /api/yo/clave': async (req) => { const b = await leerJson(req); return Usuarios.cambiarClave(req.usuario.id, b.actual, b.nueva); },
   'POST /api/yo/nombre': async (req) => Usuarios.nombre(req.usuario.id, (await leerJson(req)).nombre),
@@ -594,6 +602,12 @@ const server = http.createServer(async (req, res) => {
     // Archivos estáticos del panel
     // Carpetas (p. ej. /v2/, la interfaz social): su index.html.
     if (p === '/v2') return send(res, 301, '', 'text/plain', { Location: '/v2/' });
+    // Manual de primeros pasos (docs/manual del repositorio), para los enlaces de la app.
+    if (p === '/manual.pdf') {
+      const f = path.join(RAIZ, '..', 'docs', 'manual', 'StreamClipper-Primeros-pasos.pdf');
+      if (!existsSync(f)) return send(res, 404, 'El manual no está en esta instalación: búscalo en docs/manual del repositorio.', 'text/plain; charset=utf-8');
+      return send(res, 200, await readFile(f), 'application/pdf');
+    }
     // Interfaz web (v2) en «/».
     const archivo = path.normalize(path.join(PUBLIC, p === '/' ? 'v2/index.html' : p.endsWith('/') ? `${p}index.html` : p));
     if (!archivo.startsWith(PUBLIC)) return send(res, 403, 'Prohibido', 'text/plain');
@@ -613,6 +627,11 @@ function comprobarHerramientas() {
       if (e && (e.code === 'ENOENT' || e.errno === -2)) console.warn(`Aviso: no encuentro «${cmd}» en el PATH. El panel funciona, pero hace falta para ${para}. Instálalo y reinicia StreamClipper.`);
     });
   }
+}
+// Telemetría (solo si el dueño la activó): arranque y resumen diario, desde el proceso de trabajos o el todo-en-uno.
+if (Rol.conTrabajos) {
+  setTimeout(() => PrimerosPasos.herramientasMapa().then((h) => Telemetria.iniciada(h)).catch(() => {}), 15000).unref();
+  setInterval(() => Telemetria.cicloDiario(), 3600000).unref(); setTimeout(() => Telemetria.cicloDiario(), 90000).unref();
 }
 server.listen(PORT, HOST, () => {
   console.log(`StreamClipper en http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}  ·  modelos: ${ajustes()['llm.url']}`);

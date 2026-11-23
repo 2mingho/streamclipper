@@ -22,8 +22,10 @@ import { aceleradorDisponible, encargar } from '../acelerador.mjs';
 import { leerChat, picosChat, enfoquePicos, picosVoz, combinarPicos, enfoqueReacciones } from './clips-picos.mjs';
 import { perfil as perfilCampana, perfilDeVideo, esDelJuego, pareceEspanol, conTagsCampana } from './campanas.mjs';
 import * as Twitch from './twitch.mjs';
+import { recortarLargo } from './momentos.mjs';
+import * as Telemetria from '../telemetria.mjs';
 
-const LINUX = process.platform === 'linux';
+const LINUX = process.platform !== 'win32'; // Linux y macOS (en Windows, StreamClipper se usa dentro de WSL)
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS clip_canales (
@@ -153,7 +155,7 @@ export const TIPOS = {
       + 'fails, caos, choques, persecuciones, sustos, rabia, jugadas épicas, frases memorables, bromas con el chat y descubrimientos '
       + 'sorprendentes del juego. Prioriza lo que alguien mandaría a un amigo («bro, este eres tú»): karma instantáneo (presume y le sale mal en segundos), NPC o policía que se defienden, momentos con los protagonistas del juego, «lo dije» y fallos graciosos; con la reacción real visible y el remate dentro del clip. Evita menús, pantallas de carga, silencios y tramos de conducir o caminar sin que pase nada.',
   },
-  general: { nombre: 'General', desc: 'Sin indicaciones: OpenShorts decide el encuadre y busca lo más viral.', layouts: 'auto', min: 0, max: 0, enfoque: '' },
+  general: { nombre: 'General', desc: 'Sin indicaciones: se buscan los momentos con más reacción y lo más reproducido.', layouts: 'auto', min: 0, max: 0, enfoque: '' },
 };
 const tipoValido = (t) => (TIPOS[t] ? t : 'general');
 
@@ -204,7 +206,7 @@ export const videos = {
   async añadir({ fuente, tipo, enfoque = '', urgente = false, titulo = '' }) {
     fuente = String(fuente || '').trim();
     if (!fuente) throw new Error('Falta el enlace o el archivo');
-    if (esUrl(fuente)) { if (!/^https?:\/\/([\w-]+\.)*(youtube\.com|youtu\.be|vimeo\.com|twitch\.tv)\//i.test(fuente)) throw new Error('Por ahora: enlaces de YouTube, Vimeo o Twitch'); }
+    if (esUrl(fuente)) { if (!/^https?:\/\/([\w-]+\.)*(youtube\.com|youtu\.be|vimeo\.com|twitch\.tv|kick\.com)\//i.test(fuente)) throw new Error('Por ahora: enlaces de YouTube, Twitch, Kick o Vimeo'); }
     else {
       const dir = path.resolve(ajustes()['clips.entrada']);
       const r = path.resolve(fuente);
@@ -219,6 +221,8 @@ export const videos = {
         titulo = t; dur = Number(d) || null;
       } catch (e) { if (/directo/.test(e.message)) throw e; }
     }
+    // Archivo del servidor: su duración decide si es un clip corto (se monta aquí) o un vídeo largo (OpenShorts).
+    if (!esUrl(fuente)) { try { dur = Number(String(await ejecutar('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', fuente], { timeout: 30000 })).trim()) || null; } catch {} }
     if (!esUrl(fuente) && !titulo) titulo = path.basename(fuente).replace(/\.\w+$/, '').replace(/[-_]+/g, ' ');
     return Number(db.prepare('INSERT INTO clip_videos (fuente, video, titulo, duracion_s, tipo, enfoque, urgente) VALUES (?,?,?,?,?,?,?)')
       .run(fuente, idYoutube(fuente), String(titulo || fuente).slice(0, 300), dur, tipoValido(tipo), String(enfoque).trim().slice(0, 600), urgente ? 1 : 0).lastInsertRowid);
@@ -637,6 +641,7 @@ async function terminar(v, clips, { logs = [], segmentos = null, fuenteLocal = n
     console.error('Clips: postproceso:', e.message); throw new Error(`Postproceso: ${e.message}`.slice(0, 300));
   }
   if (!clips.length) throw new Error('Ningún clip coincide con los momentos que marcó Gemini');
+  Telemetria.clipCreado({ fuente: v.video ? 'https://youtube.com' : v.fuente, duracion: v.duracion_s, conSubtitulos: !!(segmentos && segmentos.length) });
   // La ventana puede haberse movido (picos del chat) y pueden haber entrado clips nuevos: enlaces y créditos al día.
   for (const c of clips) { c.original = enlaceOriginal(v, c.inicio); c.canalUrl = c.canalUrl || (cr.canalUrl ? `https://${cr.canalUrl.replace(/^https?:\/\//, '')}` : ''); }
   const carpeta = publicar(v, clips);
@@ -668,11 +673,16 @@ async function palabrasCorto(video, idioma) {
     } catch (e) { console.error(`Clips: la laptop no transcribió el clip corto (${String(e.message).slice(0, 120)}); se hace aquí`); }
   }
   const cfg = ajustes(), wav = `${base}.wav`;
+  // Whisper es opcional: sin el programa o sin su modelo, el clip se monta igual, sin subtítulos.
+  if (!existsSync(String(cfg['whisper.modelo'] || ''))) { console.log('Clips: sin modelo de whisper; el clip corto sale sin subtítulos'); return []; }
   await ejecutar('ffmpeg', ['-v', 'error', '-y', '-nostdin', '-i', video, '-vn', '-ac', '1', '-ar', '16000', wav], { timeout: 300000 });
   try {
     await ejecutar(cfg['whisper.binario'], ['-m', cfg['whisper.modelo'], '-l', idioma, '-t', String(cfg['whisper.hilos'] || 4), '-np', '-ml', '1', '-sow', '-oj', '-of', base, '-f', wav], { timeout: 900000 });
     const j = JSON.parse(readFileSync(`${base}.json`, 'utf8'));
     return (j.transcription || []).map((x) => ({ w: x.text, s: x.offsets.from / 1000, e: x.offsets.to / 1000 })).filter((p) => String(p.w).trim());
+  } catch (e) {
+    if (/ENOENT/.test(String(e.message || e.code))) { console.log('Clips: whisper no está instalado; el clip corto sale sin subtítulos'); return []; }
+    throw e;
   } finally { rmSync(wav, { force: true }); rmSync(`${base}.json`, { force: true }); }
 }
 
@@ -914,6 +924,8 @@ export async function cicloClips({ ocupadoFuera = false } = {}) {
   try {
     // 1. seguir lo que está en OpenShorts
     for (const v of db.prepare("SELECT * FROM clip_videos WHERE estado='procesando'").all().map(parseVideo)) {
+      // Motor propio o clip corto cortado por un reinicio (no hay nada en marcha: este ciclo tiene el cerrojo): vuelve a la cola.
+      if (/^(propio|corto)-/.test(v.job || '')) { db.prepare("UPDATE clip_videos SET estado='cola', job=NULL, paso=NULL WHERE id=?").run(v.id); continue; }
       try { await seguir(v); }
       catch (e) {
         if (/fetch failed|ECONNREFUSED/.test(e.message)) { db.prepare('UPDATE clip_videos SET paso=? WHERE id=?').run('OpenShorts no responde; se reintenta', v.id); continue; }
@@ -941,10 +953,12 @@ export async function cicloClips({ ocupadoFuera = false } = {}) {
       // Un tramo cuyo vídeo Gemini ya analizó sin marcar nada dentro de él se descarta (no tiene momentos buenos).
       const cands = db.prepare(`SELECT v.* FROM clip_videos v LEFT JOIN clip_canales c ON c.id = v.canal_id
         WHERE v.estado='cola' ORDER BY (COALESCE(v.campana, c.campana) IS NOT NULL) DESC, v.urgente DESC, COALESCE(c.prioridad, 2), v.id`).all().map(parseVideo);
+      // Sin ninguna marca de IA recibida nunca (nadie conectó el MCP), no se espera a Gemini: motor propio.
+      const sinMarcasIA = !db.prepare('SELECT 1 FROM ia_escenas LIMIT 1').get();
       for (const v of cands) {
         // Los tramos de directos entran solos como urgentes: esos también esperan a Gemini (analiza el directo ya subido).
         // Los clips de Twitch ya son un momento elegido por el público: pasan sin esperar a Gemini (decisión del editor, 22-nov).
-        const aMano = !!v.sin_ia || (v.canal_id && db.prepare('SELECT esperar_ia FROM clip_canales WHERE id = ?').get(v.canal_id)?.esperar_ia === 0) || !v.canal_id || (v.urgente && !/-tramo\d+\.mp4$/.test(v.fuente || '')) || /twitch\.tv\/[^/]+\/clip\//i.test(v.fuente || '');
+        const aMano = sinMarcasIA || !!v.sin_ia || (v.canal_id && db.prepare('SELECT esperar_ia FROM clip_canales WHERE id = ?').get(v.canal_id)?.esperar_ia === 0) || !v.canal_id || (v.urgente && !/-tramo\d+\.mp4$/.test(v.fuente || '')) || /twitch\.tv\/[^/]+\/clip\//i.test(v.fuente || '');
         if (aMano) { if (v.urgente || !cercaTanda) { sig = v; break; } continue; }
         if (momentosIA(v).length) { if (!cercaTanda) { sig = v; break; } continue; }
         if (analizadoPorIA(v) && v.offset_s > 0 && !v.sin_ia && !tramoSinVer(v)) db.prepare("UPDATE clip_videos SET estado='descartado', error=? WHERE id=?").run('Gemini analizó el vídeo y no marcó momentos en este tramo', v.id);
@@ -962,10 +976,11 @@ export async function cicloClips({ ocupadoFuera = false } = {}) {
         db.prepare("UPDATE clip_videos SET estado = 'troceando', paso = 'Bajando solo los momentos de Gemini' WHERE id = ?").run(sig.id);
         console.log(`Clips: «${sig.titulo}» se trocea en los momentos de Gemini (sin OpenShorts)`); return;
       }
-      try { if (esCorto(sig) || (propioIA && !esUrl(sig.fuente))) { await procesarCorto(sig); console.log(`Clips: clip corto «${sig.titulo}» montado sin OpenShorts`); } else { await enviar(sig); console.log(`Clips: enviado «${sig.titulo}» (${sig.tipo})`); } }
+      try { if (esCorto(sig) || (propioIA && !esUrl(sig.fuente))) { await procesarCorto(sig); console.log(`Clips: clip corto «${sig.titulo}» montado sin OpenShorts`); } else if (cfg['clips.motor'] === 'openshorts') { await enviar(sig); console.log(`Clips: enviado «${sig.titulo}» (${sig.tipo}) a OpenShorts`); } else await recortarLargo(sig); }
       catch (e) {
         if (/fetch failed|ECONNREFUSED/.test(e.message)) return; // OpenShorts apagado: se reintenta en la próxima vuelta
         db.prepare("UPDATE clip_videos SET estado='error', error=?, terminado=? WHERE id=?").run(e.message.slice(0, 500), ahoraIso(), sig.id);
+        Telemetria.error(e.message, esCorto(sig) ? 'corto' : 'largo');
       }
     }
   } finally { ocupado = false; }
