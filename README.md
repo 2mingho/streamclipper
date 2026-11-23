@@ -1,113 +1,76 @@
-<div align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/cabecera-oscuro.svg">
+  <img alt="StreamClipper, a self-hosted clipping studio: long streams in, vertical clips out." src="docs/cabecera-claro.svg" width="100%">
+</picture>
 
-# ✂️ StreamClipper
+StreamClipper watches the channels you pick, finds the moments worth posting, cuts them to 9:16 with the webcam and the game in frame, adds captions and your campaign's logo, and queues them for YouTube Shorts and TikTok. You review everything from a web panel that works on your phone. It runs on your own computer, so there's no per-minute bill and nobody else holds your videos.
 
-**Self-hosted AI clipping studio for streamers & clippers — turn long streams and VODs into vertical Shorts, Reels and TikToks, on your own server.**
+I built it for my own clipping work and use it every day. This is the open part of that setup.
 
-**Estudio de clips con IA, autoalojado, para clippers y streamers: convierte directos y VODs largos en Shorts, Reels y TikToks verticales, en tu propio servidor.**
+**[English](#what-it-does)** · **[Español](#qué-hace)** · **[Screenshots](#screenshots)** · **[Install](#install)**
 
-[English](#-english) · [Español](#-español) · [Screenshots](#-screenshots--capturas) · [Install](#-quick-install--instalación-rápida)
+## What it does
 
-![Node.js](https://img.shields.io/badge/Node.js-22.13%2B-339933?logo=node.js&logoColor=white)
-![FFmpeg](https://img.shields.io/badge/FFmpeg-powered-007808?logo=ffmpeg&logoColor=white)
-![Self-hosted](https://img.shields.io/badge/self--hosted-yes-blue)
-![MCP](https://img.shields.io/badge/MCP-Claude%20%7C%20Gemini%20%7C%20ChatGPT-8A2BE2)
-![License](https://img.shields.io/badge/license-AGPL--3.0-orange)
+**Finds the moments.** Chat spikes, audio peaks, the "most replayed" curve and the transcript all count. If you'd rather have an AI choose, connect Claude, Gemini or any MCP client to the built-in MCP server and let it mark the moments on a schedule. You bring your own account; nothing is shared.
 
-</div>
+**Frames them for vertical.** Webcam on top, gameplay below, or full frame. It detects the webcam and remembers how you framed each streamer, so the next clip comes out the same way.
 
----
+**Writes the text.** Word-by-word captions with Whisper, a hook on screen, a title and hashtags.
 
-## 🇬🇧 English
+**Handles campaigns.** Each campaign keeps its logo, required hashtags, language and posting rules, and a clip that breaks them waits instead of going out.
 
-**StreamClipper** is an open-source, self-hosted **stream clipping tool**: it watches the channels you choose (YouTube, Twitch, Kick…), finds the best moments, cuts them into **vertical 9:16 clips** with webcam + gameplay framing, word-by-word **captions**, hooks and your logo, and publishes them to **YouTube Shorts** and **TikTok** — while you review everything from a fast web panel on your phone.
+**Publishes.** Upload queues for YouTube Shorts and TikTok with daily limits. Each user connects their own Google and TikTok apps.
 
-Built for **clippers** running clipping campaigns (Content Rewards, Whop, Clipping.com-style programs) and for **streamers** who want their own highlight factory without paying per minute of video.
+**Learns what you skip.** Mark a clip as good or bad and say why. After a while it sets aside the ones you would have thrown out.
 
-### ✨ Features
+There's also a built-in editor (trim, reframe, layers, undo) and a server page in the style of btop that shows CPU per core, memory, network, disks and every process grouped by service.
 
-- 🎯 **Smart moment detection** — chat spikes, audio peaks, "most replayed" heatmaps and transcripts; or let **your own AI** (Claude, Gemini, ChatGPT…) mark the moments through the built-in **MCP server**.
-- 📱 **Vertical reframing** — webcam + gameplay layouts, auto webcam detection, per-streamer learned framing.
-- 💬 **Captions & hooks** — word-by-word subtitles (Whisper), on-screen hook text, titles and hashtags.
-- 🏷️ **Campaign mode** — logos, required hashtags, language checks and posting rules per campaign.
-- 🚀 **Auto-publish** — YouTube Shorts & TikTok queues with daily limits (each user connects **their own** Google/TikTok app — nothing is shared).
-- ✏️ **Built-in editor** — trim, re-frame, layers, undo; renders in the background.
-- 🧠 **Learns from you** — rate clips (good / bad + reason) and the pre-filter learns what you discard.
-- 🖥️ **btop-style server dashboard** — live CPU per core, RAM, network, disks, sensors and processes grouped by service.
-- 🔒 **Private by default** — runs on your machine; designed for Tailscale; the public internet only sees what you choose.
+## Qué hace
 
-### ⚡ Quick install
+StreamClipper vigila los canales que elijas, encuentra los momentos que vale la pena publicar, los recorta en 9:16 con la webcam y el juego en cuadro, les pone subtítulos y el logo de tu campaña, y los deja en cola para YouTube Shorts y TikTok. Lo revisas todo desde un panel web que funciona en el móvil. Corre en tu propio equipo: no pagas por minuto de vídeo y tus vídeos no salen de tu casa.
 
-```bash
-git clone https://github.com/2mingho/streamclipper.git && cd streamclipper/servidor
-npm install
-npm start          # → open http://localhost:8790 and create your account
-```
+- **Momentos:** picos de chat y de audio, la curva de «lo más visto» y la transcripción. O conecta tu propia IA (Claude, Gemini o cualquier cliente MCP) al servidor MCP incluido para que los marque ella.
+- **Encuadre vertical:** detecta la webcam y recuerda cómo encuadraste a cada streamer.
+- **Texto:** subtítulos palabra a palabra con Whisper, gancho en pantalla, título y hashtags.
+- **Campañas:** logo, hashtags obligatorios, idioma y reglas; si un clip no las cumple, espera.
+- **Publicación:** colas para YouTube Shorts y TikTok con límite diario, con tus propias apps de Google y TikTok.
+- **Aprende de ti:** valora los clips y con el tiempo aparta los que habrías descartado.
 
-Requirements: **Node.js 22.13+**, **FFmpeg** and **yt-dlp** in your PATH. Optional: Whisper (whisper.cpp) for captions, a GPU laptop as accelerator, [Tailscale](https://tailscale.com) to reach it from your phone.
+## Screenshots
 
----
+| Clips | Editor | Server |
+|:--|:--|:--|
+| ![Grid of demo clips](docs/capturas/clips.png) | ![Editor with a vertical result](docs/capturas/editor.png) | ![btop-style server page](docs/capturas/servidor.png) |
+| **Phone** | **Upload queue** | **Settings** |
+| ![Phone view](docs/capturas/movil.png) | ![Upload queue](docs/capturas/cola.png) | ![Settings](docs/capturas/ajustes.png) |
 
-## 🇪🇸 Español
+## Install
 
-**StreamClipper** es una herramienta **open source y autoalojada para hacer clips de directos**: vigila los canales que elijas (YouTube, Twitch, Kick…), encuentra los mejores momentos, los recorta en **vertical 9:16** con webcam + juego, **subtítulos** palabra a palabra, gancho y tu logo, y los publica en **YouTube Shorts** y **TikTok**. Tú lo revisas todo desde un panel web rápido en el móvil.
-
-Pensado para **clippers** que trabajan campañas de clipping (Content Rewards, Whop y similares) y para **streamers** que quieren su propia fábrica de highlights sin pagar por minuto de vídeo.
-
-### ✨ Qué hace
-
-- 🎯 **Detección de momentos** — picos de chat y de audio, «lo más visto» y transcripciones; o que **tu propia IA** (Claude, Gemini, ChatGPT…) marque los momentos a través del **servidor MCP** incluido.
-- 📱 **Encuadre vertical** — diseños webcam + juego, detección de la webcam y encuadre aprendido por streamer.
-- 💬 **Subtítulos y gancho** — subtítulos palabra a palabra (Whisper), texto en pantalla, títulos y hashtags.
-- 🏷️ **Modo campaña** — logos, hashtags obligatorios, idioma y reglas de publicación por campaña.
-- 🚀 **Publicación automática** — colas para YouTube Shorts y TikTok con límite diario (cada usuario conecta **su propia** app de Google/TikTok; no se comparte nada).
-- ✏️ **Editor integrado** — recortar, reencuadrar, capas, deshacer; renderiza en segundo plano.
-- 🧠 **Aprende de ti** — valora los clips (sirve / no sirve + motivo) y el prefiltro aprende lo que descartas.
-- 🖥️ **Panel del servidor estilo btop** — CPU por núcleo, memoria, red, discos, sensores y procesos por servicio, en vivo.
-- 🔒 **Privado por defecto** — corre en tu equipo; pensado para Tailscale; desde internet solo se ve lo que tú decidas.
-
-### ⚡ Instalación rápida
+You need Node.js 22.13 or newer, FFmpeg and yt-dlp. Whisper (whisper.cpp) is optional and only needed for captions.
 
 ```bash
-git clone https://github.com/2mingho/streamclipper.git && cd streamclipper/servidor
+git clone https://github.com/2mingho/streamclipper.git
+cd streamclipper/servidor
 npm install
-npm start          # → abre http://localhost:8790 y crea tu cuenta
+npm start
 ```
 
-Necesitas **Node.js 22.13+**, **FFmpeg** y **yt-dlp** en el PATH. Opcional: Whisper (whisper.cpp) para subtítulos, una laptop con GPU como acelerador y [Tailscale](https://tailscale.com) para entrar desde el móvil.
+Open http://localhost:8790 and create your account. The first login becomes the owner. If FFmpeg or yt-dlp are missing, the server tells you which one when it starts.
 
----
+To reach it from your phone, put it on [Tailscale](https://tailscale.com) and open the same address through your tailnet. A sample systemd unit is in `servidor/herramientas/`.
 
-## 📸 Screenshots / Capturas
+## What's not in this repository
 
-| Clips | Editor | Server (btop) |
-|---|---|---|
-| ![Clips](docs/capturas/clips.png) | ![Editor](docs/capturas/editor.png) | ![Server](docs/capturas/servidor.png) |
+Your data, your keys and your accounts. The database, the videos, the Groq key, the MCP secret and the YouTube and TikTok tokens are created on your machine and stay there. The repository only ships an example campaign.
 
-| Mobile / Móvil | Upload queue / Cola de subida | Settings / Ajustes |
-|---|---|---|
-| ![Mobile](docs/capturas/movil.png) | ![Queue](docs/capturas/cola.png) | ![Settings](docs/capturas/ajustes.png) |
+## Coming next
 
----
+A native Android app (Jetpack Compose) is in progress.
 
-## 🤖 AI assistants via MCP / Asistentes de IA por MCP
+## Contributing
 
-StreamClipper ships an **MCP server** (`mcp/`). Connect it to Claude, Gemini or any MCP client with **your own secret URL**, and schedule a task in your assistant to mark the best moments of new videos. *Each user sets this up with their own account; StreamClipper never ships keys.*
+Issues and pull requests are welcome. If StreamClipper saves you editing time, a star helps other clippers find it.
 
-StreamClipper incluye un **servidor MCP** (`mcp/`). Conéctalo a Claude, Gemini o cualquier cliente MCP con **tu propia URL secreta** y programa una tarea en tu asistente para que marque los mejores momentos de los vídeos nuevos. *Cada usuario lo configura con su propia cuenta; StreamClipper no incluye claves.*
-
-## 📲 Native app / App nativa
-
-A native **Android app** (Jetpack Compose, Material You) is in the works. / Hay una **app nativa para Android** en camino.
-
-## ⭐ Support / Apoya el proyecto
-
-If StreamClipper saves you hours of editing, **a star ⭐ helps other clippers find it**. Issues and PRs welcome.
-
-Si StreamClipper te ahorra horas de edición, **una estrella ⭐ ayuda a que otros clippers lo encuentren**. Issues y PRs bienvenidos.
-
-## 📄 License / Licencia
+## License
 
 [AGPL-3.0](LICENSE)
-
-<sub>Keywords: stream clipper, AI clipping tool, auto clip generator, YouTube Shorts maker, TikTok clips, Twitch clips, Kick clips, vertical video, 9:16 reframe, highlights generator, clipping campaigns, content rewards, self-hosted, open source, MCP server, Claude, Gemini · clips de directos, hacer clips automáticamente, generador de shorts, clipper, campañas de clipping.</sub>

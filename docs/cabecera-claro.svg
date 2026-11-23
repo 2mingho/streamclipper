@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="340" viewBox="0 0 1000 340" font-family="Barlow, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" role="img" aria-labelledby="t d">
+<title id="t">StreamClipper</title><desc id="d">Self-hosted clipping studio: long streams in, vertical clips out.</desc>
+<rect x="0.5" y="0.5" width="999" height="339" rx="12" fill="#ffffff" stroke="#d6d9de"/>
+<circle cx="712" cy="0" r="14" fill="#ffffff" stroke="#d6d9de"/><circle cx="712" cy="340" r="14" fill="#ffffff" stroke="#d6d9de"/>
+<line x1="712" y1="22" x2="712" y2="318" stroke="#b5bac1" stroke-dasharray="2 6"/>
+<rect x="40" y="38" width="12" height="12" rx="3" fill="#fadf25"/>
+<text x="62" y="49" font-size="14" fill="#474d55" font-weight="500">StreamClipper · self-hosted clipping studio</text>
+<text x="40" y="110" font-size="40" fill="#0b0d10" font-weight="500" letter-spacing="-0.6">Long streams in.</text>
+<text x="40" y="156" font-size="40" fill="#0b0d10" font-weight="500" letter-spacing="-0.6">Vertical clips out.</text>
+<line x1="40" y1="196" x2="672" y2="196" stroke="#d6d9de"/>
+<text x="40" y="228" font-size="13" fill="#6b7178" font-weight="500">From</text><text x="40" y="252" font-size="17" fill="#0b0d10">YouTube, Twitch and Kick VODs</text>
+<text x="380" y="228" font-size="13" fill="#6b7178" font-weight="500">To</text><text x="380" y="252" font-size="17" fill="#0b0d10">Shorts and TikToks, captioned</text>
+<line x1="40" y1="276" x2="672" y2="276" stroke="#d6d9de"/>
+<text x="40" y="308" font-size="14" fill="#474d55">Moment detection   ·   9:16 reframing   ·   Captions   ·   Campaigns   ·   Auto-publish</text>
+<text x="752" y="70" font-size="13" fill="#6b7178" font-weight="500">Runs on</text><text x="752" y="94" font-size="17" fill="#0b0d10">Your own machine</text>
+<text x="752" y="140" font-size="13" fill="#6b7178" font-weight="500">Built with</text><text x="752" y="164" font-size="17" fill="#0b0d10">Node.js · FFmpeg</text>
+<text x="752" y="210" font-size="13" fill="#6b7178" font-weight="500">License</text><text x="752" y="234" font-size="17" fill="#0b0d10">AGPL-3.0</text>
+<text x="752" y="302" font-size="13" fill="#6b7178">github.com/2mingho/streamclipper</text>
+</svg>
