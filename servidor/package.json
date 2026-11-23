@@ -1,0 +1,17 @@
+{
+  "name": "streamclipper",
+  "version": "0.1.0",
+  "private": true,
+  "description": "StreamClipper: servidor autoalojado y panel web para clippers (clips verticales, encuadre, subtítulos, campañas y publicación).",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.mjs"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "dependencies": {
+    "playwright-core": "^1.65.1"
+  },
+  "license": "AGPL-3.0-or-later"
+}

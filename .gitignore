@@ -1,0 +1,14 @@
+# Datos, secretos y artefactos: nunca al repositorio
+**/datos/
+**/node_modules/
+*.bak*
+*.token
+.token
+*.env
+.env*
+*.log
+*.db
+*.sqlite
+client_secret*.json
+token*.json
+*.pass

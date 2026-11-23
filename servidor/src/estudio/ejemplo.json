@@ -1,0 +1,16 @@
+{
+  "slug": "prueba-motor",
+  "formato": "finanzas",
+  "titulo": "3 errores que vacían tu cuenta sin que lo notes",
+  "marca": "StreamClipper",
+  "estilo": { "paleta": { "fondo": "#0f1115", "tinta": "#f3f1ec", "suave": "#9a9ea6", "acento": "#e8b04a" } },
+  "escenas": [
+    { "id": "e01", "capitulo": "El problema", "narracion": "La mayoría de la gente no pierde su dinero en una gran decisión. Lo pierde en tres pequeños errores que repite cada mes.",
+      "visual": { "tipo": "portada", "titulo": "3 errores que vacían tu cuenta", "subtitulo": "Y cómo evitarlos desde hoy" } },
+    { "id": "e02", "narracion": "Una suscripción olvidada de diez dólares al mes son ciento veinte al año. Y casi todos tenemos más de una.",
+      "visual": { "tipo": "cifra", "valor": "$120", "etiqueta": "al año por una sola suscripción olvidada", "nota": "10 dólares al mes × 12 meses" } },
+    { "id": "e03", "capitulo": "Los tres errores", "clip": "short-1", "narracion": "Primero: pagar solo el mínimo de la tarjeta. Segundo: no tener un fondo para imprevistos. Tercero: ahorrar lo que sobra, en lugar de apartar primero.",
+      "visual": { "tipo": "lista", "titulo": "Los 3 errores", "items": [ { "texto": "Pagar solo el mínimo de la tarjeta" }, { "texto": "No tener fondo para imprevistos" }, { "texto": "Ahorrar lo que sobra", "detalle": "en vez de apartar primero" } ] } }
+  ],
+  "shorts": [ { "id": "short-1", "titulo": "Los 3 errores con tu dinero", "escenas": ["e03"] } ]
+}

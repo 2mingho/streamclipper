@@ -1,0 +1,18 @@
+# Servicio de usuario de ejemplo. Cópialo a ~/.config/systemd/user/streamclipper.service, ajusta las rutas y:
+#   systemctl --user daemon-reload && systemctl --user enable --now streamclipper
+#   loginctl enable-linger "$USER"   # para que siga funcionando sin sesión abierta
+[Unit]
+Description=StreamClipper (panel, API y trabajos)
+After=network-online.target
+
+[Service]
+WorkingDirectory=%h/streamclipper/servidor
+ExecStart=/usr/bin/env node src/server.mjs
+Environment=PORT=8790
+Environment=HOST=127.0.0.1
+Environment=DATOS_DIR=%h/streamclipper/datos
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

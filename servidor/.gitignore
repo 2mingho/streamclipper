@@ -1,0 +1,21 @@
+# Datos, secretos y artefactos (nunca al repositorio)
+datos/
+copia-db/
+node_modules/
+*.bak*
+*.token
+*.log
+.env*
+client_secret*.json
+token*.json
+*.sqlite
+*.db
+__pycache__/
+# Perfil de navegador (cookies, sesiones) y resultados de experimentos
+experimentos/perfil-navegador/
+experimentos/resultados/
+*.png
+*.old
+*.dat
+*.pma
+*-journal

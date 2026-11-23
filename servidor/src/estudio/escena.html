@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Escena</title>
+<style>
+/* Plantillas de escena del Estudio. Todo se anima en función de un tiempo t (segundos) que fija el renderizador:
+   el mismo t da siempre el mismo fotograma, así se graba fotograma a fotograma sin GPU.
+   Sirven en horizontal (1920×1080) y en vertical (1080×1920, Shorts): el diseño se adapta a la proporción. */
+@font-face { font-family: "Geist"; font-weight: 100 900; src: url(../../public/fuentes/geist-latin.woff2) format("woff2"); }
+@font-face { font-family: "Geist"; font-weight: 100 900; src: url(../../public/fuentes/geist-latin-ext.woff2) format("woff2"); unicode-range: U+0100-02BA, U+1E00-1E9F; }
+:root { --ink: #1e1b18; --fondo: #0f1115; --tinta: #f3f1ec; --suave: #9a9ea6; --acento: #e8b04a; --malo: #e5604f; --bueno: #4fb286; --plano: #1a1d23; }
+* { box-sizing: border-box; margin: 0; }
+html, body { width: 100%; height: 100%; background: var(--fondo); color: var(--tinta); font-family: "Geist", system-ui, sans-serif; overflow: hidden; }
+#lienzo { position: absolute; inset: 0; display: grid; padding: 8vh 8vw 10vh; }
+#lienzo > div { display: grid; width: 100%; }
+.marca { position: absolute; left: 4vw; bottom: 4vh; font-size: 2.2vh; letter-spacing: .02em; color: var(--suave); display: flex; gap: 1vh; align-items: center; }
+.marca i { width: 1.2vh; height: 1.2vh; border-radius: 50%; background: var(--acento); display: inline-block; }
+.prog { position: absolute; left: 0; bottom: 0; height: .5vh; background: var(--acento); }
+.vertical #lienzo { padding: 12vh 7vw 18vh; }
+
+/* portada */
+.portada { align-content: center; gap: 3vh; }
+.portada h1 { font-size: 13vh; line-height: 1; letter-spacing: -.035em; font-weight: 700; max-width: 16ch; }
+.portada p { font-size: 4.2vh; color: var(--suave); max-width: 40ch; line-height: 1.35; }
+.vertical .portada h1 { font-size: 6.4vh; }
+/* cifra */
+.cifra { align-content: center; justify-items: start; gap: 2vh; }
+.cifra .numero { font-size: 30vh; font-weight: 700; letter-spacing: -.05em; line-height: .9; font-variant-numeric: tabular-nums; color: var(--acento); }
+.cifra .etiqueta { font-size: 5.4vh; max-width: 32ch; line-height: 1.25; }
+.cifra .nota { font-size: 3.2vh; color: var(--suave); max-width: 46ch; }
+.vertical .cifra .numero { font-size: 13vh; }
+/* lista */
+.lista { align-content: center; gap: 3.2vh; }
+.lista h2 { font-size: 7vh; letter-spacing: -.02em; line-height: 1.1; max-width: 24ch; }
+.lista ol { list-style: none; padding: 0; display: grid; gap: 2.2vh; }
+.lista li { display: grid; grid-template-columns: 9vh 1fr; gap: 2.4vh; align-items: baseline; font-size: 5vh; line-height: 1.25; }
+.lista li b { font-size: 4.4vh; color: var(--acento); font-variant-numeric: tabular-nums; font-weight: 600; }
+.lista li span small { display: block; font-size: 3vh; color: var(--suave); margin-top: .6vh; }
+.lista li.actual span { color: var(--tinta); } .lista li.pasado span { color: var(--suave); }
+.vertical .lista li { font-size: 3vh; } .vertical .lista h2 { font-size: 4.4vh; }
+/* línea de tiempo */
+.linea { align-content: center; gap: 6vh; }
+.linea h2 { font-size: 6.4vh; letter-spacing: -.02em; max-width: 26ch; }
+.linea .eje { position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2vw; padding-top: 3vh; }
+.linea .eje::before { content: ""; position: absolute; top: 0; left: 0; height: .4vh; width: var(--avance, 0%); background: var(--acento); }
+.linea .hito { display: grid; gap: 1.2vh; } .linea .hito b { font-size: 7vh; font-variant-numeric: tabular-nums; } .linea .hito span { font-size: 3.2vh; color: var(--suave); line-height: 1.3; }
+.vertical .linea .eje { grid-auto-flow: row; grid-auto-rows: auto; gap: 3vh; padding: 0 0 0 4vw; }
+.vertical .linea .eje::before { width: .5vh; height: var(--avance, 0%); }
+/* cita */
+.cita { align-content: center; gap: 4vh; }
+.cita blockquote { font-size: 8.4vh; line-height: 1.18; letter-spacing: -.02em; max-width: 24ch; font-weight: 500; }
+.cita blockquote::before { content: "“"; color: var(--acento); margin-right: .1em; }
+.cita cite { font-style: normal; font-size: 3.4vh; color: var(--suave); }
+.vertical .cita blockquote { font-size: 4.6vh; }
+/* comparación */
+.comparacion { align-content: center; gap: 5vh; }
+.comparacion h2 { font-size: 6.4vh; letter-spacing: -.02em; max-width: 28ch; }
+.comparacion .lados { display: grid; grid-template-columns: 1fr 1fr; gap: 4vw; }
+.comparacion .lado { display: grid; gap: 1.6vh; align-content: start; }
+.comparacion .lado b { font-size: 4vh; } .comparacion .lado .valor { font-size: 15vh; font-weight: 700; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.comparacion .lado .barra { height: 2.2vh; border-radius: 99px; background: var(--plano); overflow: hidden; } .comparacion .lado .barra i { display: block; height: 100%; background: var(--suave); border-radius: 99px; }
+.comparacion .lado.gana .valor, .comparacion .lado.gana b { color: var(--acento); } .comparacion .lado.gana .barra i { background: var(--acento); }
+.comparacion .lado span { font-size: 2.4vh; color: var(--suave); }
+.vertical .comparacion .lados { grid-template-columns: 1fr; gap: 5vh; } .vertical .comparacion .lado .valor { font-size: 8vh; }
+/* ilustrada (personajes y decorados en SVG, a sangre) */
+body.ilu { background: #efe9df; } body.ilu #lienzo { padding: 0; } body.ilu .marca { color: #5e5a54; } body.ilu .prog { background: #f0624d; }
+.ilustrada { position: absolute; inset: 0; overflow: hidden; }
+.ilustrada .sub { position: absolute; left: 50%; bottom: 7vh; transform: translateX(-50%); max-width: 80%; text-align: center; font-size: 4.2vh; font-weight: 700; line-height: 1.2; color: #fffaf0; background: var(--ink); padding: 1vh 2vh; border-radius: 1vh; }
+.vertical .ilustrada .sub { bottom: 16vh; font-size: 2.8vh; max-width: 86%; }
+/* texto con palabras clave */
+.texto { align-content: center; }
+.texto p { font-size: 10vh; line-height: 1.14; letter-spacing: -.025em; font-weight: 600; max-width: 22ch; }
+.texto p em { font-style: normal; color: var(--acento); }
+.texto p .w { display: inline-block; }
+.vertical .texto p { font-size: 5vh; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="grano" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="3"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1.4 -.35"/></filter><radialGradient id="vineta" cx=".5" cy=".5" r=".75"><stop offset=".6" stop-color="#1e1b18" stop-opacity="0"/><stop offset="1" stop-color="#1e1b18" stop-opacity=".28"/></radialGradient></svg>
+<div id="lienzo"></div>
+<div class="marca"><i></i><span id="marca"></span></div>
+<div class="prog" id="prog"></div>
+<script src="ilustracion.js"></script>
+<script src="anime.js"></script>
+<script src="pintada.js"></script>
+<script>
+// ---------- utilidades de animación por tiempo ----------
+const suave = (x) => 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3);           // ease-out cúbico
+const entra = (t, t0, dur = 0.5) => suave((t - t0) / dur);                          // 0 → 1 a partir de t0
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+// Aparece subiendo: opacidad y desplazamiento según el tiempo.
+const aparecer = (el, t, t0, d = 2.4) => { const k = entra(t, t0); el.style.opacity = k; el.style.transform = `translateY(${(1 - k) * d}vh)`; };
+// Número que cuenta hasta su valor (respeta prefijo/sufijo y separador de miles).
+function contar(texto, k) {
+  const m = String(texto).match(/^(\D*)([\d.,]+)(.*)$/); if (!m) return texto;
+  const limpio = m[2].replace(/[.,](?=\d{3}\b)/g, ''), dec = (limpio.split(/[.,]/)[1] || '').length;
+  const v = parseFloat(limpio.replace(',', '.')) * k;
+  return m[1] + v.toLocaleString('es', { minimumFractionDigits: dec, maximumFractionDigits: dec }) + m[3];
+}
+
+// ---------- plantillas: construir (una vez) y pintar(t) ----------
+const P = {
+  portada: { html: (e) => `<div class="portada"><h1>${esc(e.titulo)}</h1>${e.subtitulo ? `<p>${esc(e.subtitulo)}</p>` : ''}</div>`,
+    pintar: (r, e, t) => { aparecer(r.querySelector('h1'), t, 0.1, 4); const p = r.querySelector('p'); if (p) aparecer(p, t, 0.5); } },
+  cifra: { html: (e) => `<div class="cifra"><div class="numero">${esc(e.valor)}</div><div class="etiqueta">${esc(e.etiqueta || '')}</div>${e.nota ? `<div class="nota">${esc(e.nota)}</div>` : ''}</div>`,
+    pintar: (r, e, t) => { const n = r.querySelector('.numero'); n.textContent = contar(e.valor, entra(t, 0.1, 1.4)); aparecer(n, t, 0, 2);
+      aparecer(r.querySelector('.etiqueta'), t, 0.6); const no = r.querySelector('.nota'); if (no) aparecer(no, t, 1.4); } },
+  lista: { html: (e) => `<div class="lista">${e.titulo ? `<h2>${esc(e.titulo)}</h2>` : ''}<ol>${e.items.map((it, i) => `<li><b>${String(i + 1).padStart(2, '0')}</b><span>${esc(it.texto || it)}${it.detalle ? `<small>${esc(it.detalle)}</small>` : ''}</span></li>`).join('')}</ol></div>`,
+    pintar: (r, e, t, dur) => { const h = r.querySelector('h2'); if (h) aparecer(h, t, 0.1);
+      const lis = [...r.querySelectorAll('li')], n = lis.length, inicio = h ? 0.8 : 0.2;
+      lis.forEach((li, i) => { const t0 = e.items[i].t ?? (inicio + (i * (dur - inicio - 0.8)) / n); aparecer(li, t, t0);
+        const sig = e.items[i + 1]?.t ?? (inicio + ((i + 1) * (dur - inicio - 0.8)) / n); li.className = t >= t0 && t < sig ? 'actual' : t >= sig ? 'pasado' : ''; }); } },
+  linea: { html: (e) => `<div class="linea">${e.titulo ? `<h2>${esc(e.titulo)}</h2>` : ''}<div class="eje">${e.hitos.map((h) => `<div class="hito"><b>${esc(h.fecha)}</b><span>${esc(h.texto)}</span></div>`).join('')}</div></div>`,
+    pintar: (r, e, t, dur) => { const h = r.querySelector('h2'); if (h) aparecer(h, t, 0.1); const hs = [...r.querySelectorAll('.hito')];
+      hs.forEach((el, i) => aparecer(el, t, 0.6 + (i * (dur - 1.4)) / hs.length)); r.querySelector('.eje').style.setProperty('--avance', `${suave((t - 0.6) / (dur - 1)) * 100}%`); } },
+  cita: { html: (e) => `<div class="cita"><blockquote>${esc(e.texto)}</blockquote>${e.autor ? `<cite>${esc(e.autor)}</cite>` : ''}</div>`,
+    pintar: (r, e, t) => { aparecer(r.querySelector('blockquote'), t, 0.15, 3); const c = r.querySelector('cite'); if (c) aparecer(c, t, 0.9); } },
+  comparacion: { html: (e) => { const max = Math.max(...e.lados.map((l) => Number(l.numero) || 0), 1);
+      return `<div class="comparacion">${e.titulo ? `<h2>${esc(e.titulo)}</h2>` : ''}<div class="lados">${e.lados.map((l) => `<div class="lado ${l.gana ? 'gana' : ''}" data-p="${(Number(l.numero) || 0) / max}"><b>${esc(l.nombre)}</b><div class="valor">${esc(l.valor)}</div><div class="barra"><i></i></div>${l.nota ? `<span>${esc(l.nota)}</span>` : ''}</div>`).join('')}</div></div>`; },
+    pintar: (r, e, t) => { const h = r.querySelector('h2'); if (h) aparecer(h, t, 0.1);
+      [...r.querySelectorAll('.lado')].forEach((el, i) => { const t0 = 0.6 + i * 0.9; aparecer(el, t, t0); el.querySelector('.valor').textContent = contar(e.lados[i].valor, entra(t, t0, 1.2));
+        el.querySelector('.barra i').style.width = `${entra(t, t0 + 0.2, 1.2) * el.dataset.p * 100}%`; }); } },
+  texto: { html: (e) => `<div class="texto"><p>${String(e.texto).split(/(\*[^*]+\*)/).map((s) => s.startsWith('*') ? `<em>${s.slice(1, -1).split(' ').map((w) => `<span class="w">${esc(w)}</span>`).join(' ')}</em>` : s.split(' ').filter(Boolean).map((w) => `<span class="w">${esc(w)}</span>`).join(' ')).join(' ')}</p></div>`,
+    pintar: (r, e, t, dur) => { const ws = [...r.querySelectorAll('.w')], paso = Math.min(0.22, (dur * 0.55) / ws.length); ws.forEach((w, i) => aparecer(w, t, 0.1 + i * paso, 1.6)); } },
+};
+
+// Escena ilustrada: subtítulo quemado opcional (en vertical siempre), por trozos repartidos en la duración.
+function trozoSub(texto, t, dur) { const w = String(texto || '').replace(/\*/g, '').split(/\s+/).filter(Boolean); if (!w.length) return '';
+  const n = Math.max(1, Math.ceil(w.length / 6)), i = Math.min(n - 1, Math.floor((t / Math.max(0.1, dur - 0.3)) * n)); return w.slice(i * 6, i * 6 + 6).join(' '); }
+P.ilustrada = { html: () => '<div class="ilustrada"><div class="lamina"></div><div class="sub"></div></div>',
+  pintar: (r, e, t, dur) => { r.querySelector('.lamina').innerHTML = window.ILU(e, t, dur, actual.ctx);
+    const s = r.querySelector('.sub'), txt = (actual.ctx.vertical || e.subtitulos) && !e.bocadillo ? trozoSub(actual.ctx.narracion, t, dur) : ''; s.textContent = txt; s.style.display = txt ? '' : 'none'; } };
+P.anime = { html: () => '<div class="ilustrada"><div class="lamina"></div></div>', pintar: (r, e, t, dur) => { r.firstElementChild.innerHTML = window.ANIME(e, t, dur, actual.ctx); } };
+P.reparto_anime = { html: () => '<div class="ilustrada"></div>', pintar: (r, e, t) => { r.innerHTML = window.ANIME_REPARTO(actual.ctx.reparto || [], t); } };
+P.pintada = { html: () => '<div class="ilustrada"><div class="lamina"></div></div>', pintar: (r, e, t, dur) => { r.firstElementChild.innerHTML = window.PINTADA(e, t, dur, actual.ctx); } };
+window.sonidos = () => (!actual ? [] : actual.e.tipo === 'anime' ? window.ANIME_SONIDOS(actual.e, actual.dur, actual.ctx) : actual.e.tipo === 'pintada' ? window.PINTADA_SONIDOS(actual.e, actual.dur) : []);
+window.tClave = () => (actual && actual.e.tipo === 'pintada' ? window.PINTADA_T_CLAVE(actual.e, actual.dur) : null);
+P.reparto = { html: () => '<div class="ilustrada"></div>', pintar: (r, e, t) => { r.innerHTML = window.ILU_REPARTO(actual.ctx.reparto || [], t); } };
+
+// API para el renderizador: preparar({escena, estilo, marca, duracion, vertical}) y pintar(t).
+let actual = null;
+window.preparar = (cfg) => {
+  document.body.className = cfg.vertical ? 'vertical' : '';
+  for (const [k, v] of Object.entries(cfg.estilo?.paleta || {})) document.documentElement.style.setProperty(`--${k}`, v);
+  document.getElementById('marca').textContent = cfg.marca || '';
+  const e = cfg.escena.visual, pl = P[e.tipo] || P.texto;
+  if (['ilustrada', 'reparto', 'anime', 'reparto_anime', 'pintada'].includes(e.tipo)) document.body.classList.add('ilu');
+  const lienzo = document.getElementById('lienzo'); lienzo.innerHTML = pl.html(e);
+  actual = { r: lienzo.firstElementChild, e, pl, dur: cfg.duracion, total: cfg.total, inicio: cfg.inicioGlobal || 0, ctx: { reparto: cfg.reparto || [], vertical: !!cfg.vertical, narracion: cfg.escena.narracion, decoradoNuevo: cfg.decoradoAnterior !== e.decorado, imgBase: cfg.imgBase || '' } };
+  // Las escenas pintadas esperan a que sus imágenes estén decodificadas (si no, el primer fotograma saldría vacío).
+  const urls = e.tipo === 'pintada' ? window.PINTADA_URLS(e, cfg.imgBase || '') : [];
+  return Promise.all([document.fonts.ready, ...urls.map((u) => { const im = new Image(); im.src = u; return im.decode().catch(() => null); })]).then(() => true);
+};
+window.pintar = (t) => {
+  const a = actual; a.pl.pintar(a.r, a.e, t, a.dur);
+  const fuera = ['ilustrada', 'anime', 'pintada'].includes(a.e.tipo) ? 1 : 1 - entra(t, a.dur - 0.35, 0.35); a.r.style.opacity = fuera; // las ilustradas cortan en seco, como un montaje // fundido de salida al final de la escena
+  document.getElementById('prog').style.width = `${((a.inicio + t) / a.total) * 100}%`;
+};
+</script>
+</body>
+</html>
