@@ -62,7 +62,7 @@ export function iniciada(herramientas = {}) {
     herramientas: { ffmpeg: !!herramientas.ffmpeg, yt_dlp: !!herramientas['yt-dlp'], whisper: !!herramientas.whisper } });
 }
 // Pasos de «Primeros pasos»: cada paso se cuenta una sola vez, cuando se completa.
-const PASOS = ['herramientas', 'video', 'procesando', 'revisar', 'streamer', 'youtube'];
+const PASOS = ['herramientas', 'video', 'procesando', 'revisar', 'streamer', 'youtube', 'ia']; // 'ia' al final: los números de los demás no cambian
 export function pasos(lista) {
   if (!activa()) return;
   const hechos = new Set(ajustes()['telemetria.pasos'] || []);

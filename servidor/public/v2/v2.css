@@ -628,3 +628,6 @@ button.bt-fila:hover { background: var(--elevada); }
 .tele-pp { display: grid; gap: 8px; border-top: 1px solid var(--borde); margin-top: 6px; padding: 12px 0 8px; }
 .tele-pp a { color: var(--acento-2); text-decoration: underline; }
 .tele-pp .botones { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Saltos a una sección de Ajustes (p. ej. #/ajustes/ia/gemini): que la cabecera fija no tape el título. */
+.ajustes-vista .grupo-ajustes { scroll-margin-top: 72px; }

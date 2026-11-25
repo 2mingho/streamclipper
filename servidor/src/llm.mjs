@@ -1,10 +1,11 @@
 // Cliente para cualquier servidor compatible con la API de OpenAI (LM Studio, llama-server).
 import { aceleradorDisponible, aceleradorTieneModelo, encargar } from './acelerador.mjs';
 import { ajustes } from './db.mjs';
-import { claveGroq, contarUso } from './ia-nube.mjs';
+import { claveGroq, contarUso, baseOpenAI } from './ia-nube.mjs';
 
+// La dirección vale con o sin /v1 (antes «http://127.0.0.1:1234/v1» acababa en /v1/v1 y fallaba).
 export async function modelosDisponibles(url) {
-  const r = await fetch(`${url.replace(/\/$/, '')}/v1/models`, { signal: AbortSignal.timeout(8000) });
+  const r = await fetch(`${baseOpenAI(url)}/models`, { signal: AbortSignal.timeout(8000) });
   if (!r.ok) throw new Error(`El servidor de modelos respondió ${r.status}`);
   return ((await r.json()).data || []).map((m) => m.id).filter((id) => !/embed/i.test(id));
 }
@@ -61,10 +62,18 @@ async function chatLocal(url, { model, messages, schema, max_tokens = 800, tempe
       return (j.choices?.[0]?.message?.content || '').replace(/<think>[\s\S]*?<\/think>/g, '').trim();
     } catch (e) { console.warn(`IA en la laptop no disponible (${e.message}); se hace en el servidor.`); }
   }
-  const r = await fetch(`${url.replace(/\/$/, '')}/v1/chat/completions`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(timeoutMs),
+  const pedir = (b) => fetch(`${baseOpenAI(url)}/chat/completions`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b), signal: AbortSignal.timeout(timeoutMs),
   });
-  const txt = await r.text();
+  let r = await pedir(body);
+  let txt = await r.text();
+  // Servidores que no aceptan json_schema estricto o reasoning_effort (Ollama, versiones viejas de llama.cpp): se repite sin ellos.
+  if (r.status === 400 || r.status === 422) {
+    const { reasoning_effort, ...simple } = body;
+    if (schema) simple.response_format = { type: 'json_object' };
+    r = await pedir(simple); txt = await r.text();
+    if ((r.status === 400 || r.status === 422) && schema) { delete simple.response_format; r = await pedir(simple); txt = await r.text(); }
+  }
   if (!r.ok) throw new Error(`Modelo ${r.status}: ${txt.slice(0, 300)}`);
   const j = JSON.parse(txt);
   return (j.choices?.[0]?.message?.content || '').replace(/<think>[\s\S]*?<\/think>/g, '').trim();
