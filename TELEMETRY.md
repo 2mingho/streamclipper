@@ -13,7 +13,7 @@ Only these events, with only these fields. Anything else is dropped before sendi
 | Event | Fields | When |
 |---|---|---|
 | `app_iniciada` | `version`, `os` (platform and major release, e.g. `linux 6`), `node` (major version), `herramientas` (`ffmpeg`, `yt_dlp`, `whisper`: true/false) | Each time the server starts, and when you turn telemetry on |
-| `primeros_pasos` | `paso` (1–6), `estado` (`hecho`) | Once per checklist step, when it is completed |
+| `primeros_pasos` | `paso` (1–7; 7 = an AI connected), `estado` (`hecho`) | Once per checklist step, when it is completed |
 | `clip_creado` | `fuente` (`youtube`, `twitch`, `kick` or `archivo`), `duracion_bucket` (`<1m`, `1-10m`, `10-60m`, `60m+`), `con_subtitulos` (true/false) | Only for the first 3 clips of the install |
 | `uso_diario` | `clips_bucket` (`0`, `1-5`, `6-20`, `21+`) | At most once a day |
 | `error` | `tipo` (`descarga`, `duracion`, `sin_momentos`, `postproceso`, `transcripcion`, `openshorts`, `otro`), `paso` (`recorte`, `corto`, `largo`, `subida`) | When a video fails to process |
@@ -51,7 +51,7 @@ Solo estos eventos, con solo estos campos. Cualquier otro campo se descarta ante
 | Evento | Campos | Cuándo |
 |---|---|---|
 | `app_iniciada` | `version`, `os` (sistema y versión principal, p. ej. `linux 6`), `node` (versión principal), `herramientas` (`ffmpeg`, `yt_dlp`, `whisper`: sí/no) | Cada arranque del servidor y al activar la telemetría |
-| `primeros_pasos` | `paso` (1–6), `estado` (`hecho`) | Una vez por paso de la lista, al completarlo |
+| `primeros_pasos` | `paso` (1–7; 7 = IA conectada), `estado` (`hecho`) | Una vez por paso de la lista, al completarlo |
 | `clip_creado` | `fuente` (`youtube`, `twitch`, `kick` o `archivo`), `duracion_bucket` (`<1m`, `1-10m`, `10-60m`, `60m+`), `con_subtitulos` (sí/no) | Solo los 3 primeros clips de la instalación |
 | `uso_diario` | `clips_bucket` (`0`, `1-5`, `6-20`, `21+`) | Como mucho una vez al día |
 | `error` | `tipo` (`descarga`, `duracion`, `sin_momentos`, `postproceso`, `transcripcion`, `openshorts`, `otro`), `paso` (`recorte`, `corto`, `largo`, `subida`) | Cuando un vídeo no se puede procesar |

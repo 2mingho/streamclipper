@@ -65,11 +65,30 @@ Open http://localhost:8790 and create your account. The first login becomes the 
 
 Long videos and finished streams work out of the box: StreamClipper picks the best moments (AI marks if you connected one, otherwise YouTube's "most replayed" curve and audio peaks), downloads only those sections and turns each one into a clip. OpenShorts can be plugged in as an optional backend in Ajustes › Clips.
 
+### Connect an AI / Conecta una IA
+
+Clips come out without any AI, but titles, the on-screen hook and descriptions need one. Open **Ajustes › IA › Tu propio modelo**, pick a service, press **Ver modelos**, choose one and press **Guardar y probar**. Anything that speaks the OpenAI API works:
+
+| Service | Address | Key |
+|:--|:--|:--|
+| [Ollama](https://ollama.com) (your computer) | `http://127.0.0.1:11434/v1` | no |
+| [LM Studio](https://lmstudio.ai) (your computer) | `http://127.0.0.1:1234/v1` | no |
+| llama.cpp `llama-server` | `http://127.0.0.1:8080/v1` | no |
+| OpenRouter, OpenAI, DeepSeek, Mistral… | their API address | yes |
+
+The address works with or without `/v1`. If the model runs on another machine, use that machine's IP instead of `127.0.0.1` (and start Ollama with `OLLAMA_HOST=0.0.0.0`). Tick **Entiende imágenes** for vision models so it can also check frames and find the webcam. Your model goes first; a free [Groq](https://console.groq.com/keys) or [Gemini](https://aistudio.google.com/apikey) key, set on the same page, works as backup.
+
+**No AI account at all?** Use your Google account: open [Google AI Studio](https://aistudio.google.com/apikey), press **Create API key** and paste it in **Ajustes › IA › Gemini**. It's free, needs no Google Cloud project setup and no credit card (the free tier has daily limits; a few clips a day usually fit). The app walks you through it. Keys are stored in `~/.config/streamclipper/claves.env`, never in the database.
+
+Los clips salen sin IA, pero el título, el gancho en pantalla y las descripciones la necesitan. Entra en **Ajustes › IA › Tu propio modelo**, elige el servicio, pulsa **Ver modelos**, elige uno y pulsa **Guardar y probar**. Vale cualquier servicio compatible con la API de OpenAI (tabla de arriba). Si el modelo corre en otro equipo, usa su IP en vez de `127.0.0.1`. Marca **Entiende imágenes** si el modelo tiene visión. Tu modelo va primero; una clave gratuita de Groq o Gemini, en la misma página, sirve de respaldo.
+
+**¿No tienes ninguna cuenta de IA?** Usa tu cuenta de Google: entra en [Google AI Studio](https://aistudio.google.com/apikey), pulsa **Create API key** y pégala en **Ajustes › IA › Gemini**. Es gratis, sin configurar Google Cloud y sin tarjeta (el plan gratuito tiene límites diarios; para unos pocos clips al día suele bastar). La app te guía paso a paso.
+
 To reach it from your phone, put it on [Tailscale](https://tailscale.com) and open the same address through your tailnet. A sample systemd unit is in `servidor/herramientas/`.
 
 ## What's not in this repository
 
-Your data, your keys and your accounts. The database, the videos, the Groq key, the MCP secret and the YouTube and TikTok tokens are created on your machine and stay there. The repository only ships an example campaign.
+Your data, your keys and your accounts. The database, the videos, the AI keys, the MCP secret and the YouTube and TikTok tokens are created on your machine and stay there. The repository only ships an example campaign.
 
 ## Coming next
 

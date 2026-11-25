@@ -96,6 +96,7 @@ function ajustesPublicos() {
 }
 
 // ---------- rutas ----------
+function soloDueno(req) { if (req.usuario?.rol !== 'dueno') throw new Error('Eso solo lo puede cambiar el dueño'); }
 const rutas = {
   // Interfaz «social» (web y app): historias, feed, reels, explorar, actividad, perfil y mensajes (src/social.mjs).
   'GET /api/social/cuentas': () => ({ cuentas: Social.cuentas() }),
@@ -110,8 +111,13 @@ const rutas = {
   // Texto fijo de arriba de un clip ya montado (se repinta su franja) y publicaciones de campaña enviadas a la plataforma.
   'POST /api/clips/gancho': async (req) => { const b = await leerJson(req); const c = await Clips.cambiarTextoPantalla(b.id, b.n, b.gancho); return { ok: true, gancho: c.gancho }; },
   // Ajustes de la app (registro único, fase 2)
-  'GET /api/ajustes/registro': () => ({ ...AjustesApp.registro(), gemini: GeminiVigia.ultimas(8), cuentas: { youtube: Youtube.conectado(), tiktok: Tiktok.conectado() }, groq: IA.groqConfigurado(), cuentasRed: Cuentas.lista() }),
-  'POST /api/ia/groq': async (req) => IA.guardarClaveGroq(await leerJson(req)),
+  'GET /api/ajustes/registro': () => ({ ...AjustesApp.registro(), gemini: GeminiVigia.ultimas(8), cuentas: { youtube: Youtube.conectado(), tiktok: Tiktok.conectado() }, groq: IA.groqConfigurado(), geminiClave: IA.geminiConfigurado(), propio: IA.estadoPropio(), cuentasRed: Cuentas.lista() }),
+  // Conexiones de IA (claves en claves.env, nunca en la base de datos): solo el dueño.
+  'POST /api/ia/groq': async (req) => { soloDueno(req); return IA.guardarClaveGroq(await leerJson(req)); },
+  'POST /api/ia/gemini': async (req) => { soloDueno(req); return IA.guardarClaveGemini(await leerJson(req)); },
+  'GET /api/ia/propio': (req) => { soloDueno(req); return IA.estadoPropio(); },
+  'POST /api/ia/propio': async (req) => { soloDueno(req); return IA.guardarPropio(await leerJson(req)); },
+  'POST /api/ia/propio/modelos': async (req) => { soloDueno(req); return IA.modelosPropio(await leerJson(req)); },
   'GET /api/ia/groq/modelos': () => IA.modelosGroq(),
   'POST /api/ia/groq/probar': async (req) => { const b = await leerJson(req); return IA.probarGroq(String(b.modelo), b.tipo === 'vision' ? 'vision' : 'texto'); },
   'POST /api/campanas/logo': async (req) => { const b = await leerJson(req); return AjustesApp.subirLogo(String(b.slug), b.nombre, b.datos); },

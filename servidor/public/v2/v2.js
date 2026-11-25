@@ -337,8 +337,9 @@ function htmlPrimeros(d) {
       ${pasoPrimeros(3, P.procesando, proc, btnProc)}
       ${pasoPrimeros(4, P.revisar, P.revisar.hecho ? 'Hecho. Cada «Sirve» o «No sirve» enseña a la app qué te gusta.' : P.revisar.video ? 'Tu primer clip está listo. Míralo y marca «Sirve» o «No sirve».' : 'Cuando el vídeo termine, lo verás aquí.',
         P.revisar.video && !P.revisar.hecho ? '<a class="boton primario" href="#/reels">Abrir mi primer clip</a>' : '')}
-      ${pasoPrimeros(5, P.streamer, P.streamer.hecho ? 'Hecho: StreamClipper mira sus vídeos nuevos solo.' : 'Un canal de YouTube o Twitch que StreamClipper vigilará solo.', P.streamer.hecho ? '' : '<button class="boton" data-pp="streamer">Añadir streamer</button>')}
-      ${pasoPrimeros(6, P.youtube, P.youtube.hecho ? 'Hecho.' : 'Para publicar los clips desde aquí. Necesita una app propia en Google Cloud (el manual lo explica).', P.youtube.hecho ? '' : '<a class="boton" href="#/ajustes/publicacion">Conectar YouTube</a>')}
+      ${P.ia ? pasoPrimeros(5, P.ia, P.ia.hecho ? `Hecho: ${esc(P.ia.detalle || 'IA conectada')}.` : 'Para que cada clip salga con título, texto en pantalla y descripciones. ¿Sin cuenta de IA? Usa tu cuenta de Google: una clave gratuita de Gemini se saca en tres pasos, sin tarjeta. También vale tu propio modelo (Ollama, LM Studio, OpenRouter, OpenAI…).', P.ia.hecho ? '' : '<a class="boton primario" href="#/ajustes/ia/gemini">Gemini gratis con Google</a><a class="boton" href="#/ajustes/ia">Otras opciones</a>') : ''}
+      ${pasoPrimeros(6, P.streamer, P.streamer.hecho ? 'Hecho: StreamClipper mira sus vídeos nuevos solo.' : 'Un canal de YouTube o Twitch que StreamClipper vigilará solo.', P.streamer.hecho ? '' : '<button class="boton" data-pp="streamer">Añadir streamer</button>')}
+      ${pasoPrimeros(7, P.youtube, P.youtube.hecho ? 'Hecho.' : 'Para publicar los clips desde aquí. Necesita una app propia en Google Cloud (el manual lo explica).', P.youtube.hecho ? '' : '<a class="boton" href="#/ajustes/publicacion">Conectar YouTube</a>')}
     </ol>${htmlTelemetria(d.telemetria)}`;
 }
 async function montarPrimeros(el, { refrescar = false } = {}) {
@@ -690,6 +691,34 @@ async function vistaAjustes(main) {
     return `<a class="fila" href="#/ajustes/campana/${esc(c.slug)}"><span class="ico-fila ${est === 'activa' ? 'acento' : ''}">${I('estrella')}</span><div class="txt"><b>${esc(c.nombre)}</b><br><small>${est === 'activa' ? 'Activa: recorta y publica sola' : 'Pausada'}</small></div><span class="flecha">${I('abajo')}</span></a>`; }).join('') || '<p class="muted">No hay campañas.</p>';
   if (cat === 'ia' && datos.gemini?.length) html += `<section class="grupo-ajustes"><h2>Últimas pasadas de Gemini</h2>${datos.gemini.map((p) => `<div class="fila pasada" data-clave="${esc(p.clave)}"><div class="txt"><b>${esc(p.clave)}</b><br><small>${esc(ESTADO_PASADA[p.estado] || p.estado)}${p.resuelto ? ` · ${esc(p.resuelto)}` : ''}${p.videos ? ` · ${p.videos} vídeos esperaban` : ''}</small></div>
     ${p.estado === 'avisado' ? '<div class="botones"><button class="boton" data-op="reintentar">En 10 min</button><button class="boton" data-op="propias">Señales propias</button><button class="boton" data-op="descartar">Descartar</button></div>' : ''}</div>`).join('')}</section>`;
+  if (cat === 'ia') {
+    const pr = datos.propio || { presets: [] }, alguna = pr.configurado || datos.groq || datos.geminiClave;
+    const actual = pr.presets.find((p) => p.url && p.url === pr.url) || (pr.url ? pr.presets.find((p) => p.id === 'otro') : pr.presets[0]) || {};
+    html += `<section class="grupo-ajustes" id="ia-propio"><h2>Tu propio modelo</h2>
+    <p class="muted">${alguna ? '' : '<b>Aún no hay ninguna IA conectada:</b> los clips salen igual, pero sin título, texto en pantalla ni descripciones. ¿No tienes ninguna cuenta de IA? Lo más fácil y gratis es una <a href="#/ajustes/ia/gemini">clave de Gemini con tu cuenta de Google</a> (más abajo, en tres pasos). '}Conecta cualquier servicio compatible con la API de OpenAI: un modelo en tu equipo (Ollama, LM Studio, llama.cpp) o uno en la nube con tu clave (OpenRouter, OpenAI, DeepSeek…). Si lo conectas, va primero; Groq y Gemini quedan de respaldo.</p>
+    ${pr.configurado ? `<div class="fila"><span class="ico-fila verde">${I('robot')}</span><div class="txt"><b>${esc(pr.modelo)}</b><br><small>${esc(pr.url)}${pr.clave ? ' · con clave' : ''}${pr.vision ? ' · entiende imágenes' : ''}</small></div><div class="botones"><button class="boton" data-propio-quitar>Quitar</button></div></div>` : ''}
+    <div class="ajuste ancho"><label for="pr-servicio"><b>Servicio</b><small>Elige uno y se rellena la dirección.</small></label>
+      <div class="control"><select id="pr-servicio">${pr.presets.map((p) => `<option value="${esc(p.id)}" ${p.id === actual.id ? 'selected' : ''}>${esc(p.nombre)}</option>`).join('')}</select></div></div>
+    <div class="ajuste ancho"><label for="pr-url"><b>Dirección de la API</b><small>Vale con o sin /v1. Si el modelo corre en otro equipo, pon su IP en vez de 127.0.0.1.</small></label>
+      <div class="control"><input id="pr-url" type="url" autocomplete="off" value="${esc(pr.url || actual.url || '')}" placeholder="http://127.0.0.1:11434/v1"></div></div>
+    <div class="ajuste ancho"><label for="pr-clave"><b>Clave de API</b><small>Solo para servicios en la nube. Se guarda en un archivo protegido del servidor, nunca en la base de datos.</small></label>
+      <div class="control"><input id="pr-clave" type="password" autocomplete="off" placeholder="${pr.clave ? '(guardada; escribe otra para cambiarla)' : 'sk-… (déjala vacía si es local)'}"></div></div>
+    <div class="ajuste ancho"><label for="pr-modelo"><b>Modelo</b><small>Pulsa «Ver modelos» para elegir de la lista, o escribe su nombre.</small></label>
+      <div class="control groq-control"><input id="pr-modelo" list="pr-lista" autocomplete="off" value="${esc(pr.modelo || '')}" placeholder="${esc(actual.ejemplo || 'nombre-del-modelo')}"><datalist id="pr-lista"></datalist><button class="boton" data-propio-modelos>Ver modelos</button></div></div>
+    <div class="ajuste ancho"><label for="pr-vision"><b>Entiende imágenes</b><small>Márcalo si el modelo tiene visión (p. ej. qwen2.5-vl, gemma3, gpt-4.1-mini): así también mira fotogramas y busca la webcam.</small></label>
+      <div class="control"><input id="pr-vision" type="checkbox" ${pr.vision ? 'checked' : ''}></div></div>
+    <div class="ficha-acciones"><button class="boton primario" data-propio-guardar>${I('robot')}<span>Guardar y probar</span></button></div><div class="propio-res" hidden></div></section>`;
+  }
+  if (cat === 'ia') html += `<section class="grupo-ajustes" id="ia-gemini"><h2>Gemini con tu cuenta de Google (gratis)</h2>
+    ${datos.geminiClave ? '' : `<div class="guia-gemini"><p class="muted">No necesitas Google Cloud ni tarjeta: basta tu cuenta de Google de siempre.</p>
+    <ol class="pasos-yt">
+      <li>Abre <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener"><b>Google AI Studio</b></a> y entra con tu cuenta de Google (acepta las condiciones la primera vez).</li>
+      <li>Pulsa <b>Create API key</b> («Crear clave de API»). Si te pide un proyecto, deja el que propone: Google lo crea solo.</li>
+      <li>Copia la clave (empieza por <code>AIza</code>), pégala aquí abajo y pulsa <b>Guardar</b>. La app la prueba antes de guardarla.</li>
+    </ol>
+    <p class="muted">El plan gratuito tiene un límite de peticiones al día: para unos pocos clips diarios suele bastar. Si se te queda corto, añade también una clave gratuita de Groq (abajo) como respaldo.</p></div>`}
+    <div class="ajuste ancho"><label for="gemini-clave"><b>Clave de la API de Gemini</b><small>${datos.geminiClave ? 'Guardada. Escribe otra para cambiarla. ' : ''}Se guarda en un archivo protegido del servidor, nunca en la base de datos.</small></label>
+    <div class="control groq-control"><input id="gemini-clave" type="password" autocomplete="off" placeholder="${datos.geminiClave ? 'AIza… (guardada)' : 'AIza…'}"><button class="boton primario" data-gemini>Guardar</button>${datos.geminiClave ? '<button class="boton" data-gemini-quitar>Quitar</button>' : ''}</div></div></section>`;
   if (cat === 'ia') html += `<section class="grupo-ajustes"><h2>Groq (IA de respaldo, va antes que Gemini)</h2>
     <div class="ajuste ancho"><label for="groq"><b>Clave de la API de Groq</b><small>${datos.groq ? 'Guardada y funcionando. Escribe otra para cambiarla.' : 'Sin clave: todo depende del cupo de Gemini.'} Se guarda en un archivo protegido del servidor, nunca en la base de datos.</small></label>
     <div class="control groq-control"><input id="groq" type="password" autocomplete="off" placeholder="${datos.groq ? 'gsk_… (guardada)' : 'gsk_…'}"><button class="boton primario" data-groq>Guardar</button>${datos.groq ? '<button class="boton" data-groq-quitar>Quitar</button>' : ''}</div></div>${datos.groq ? '<div class="groq-modelos"><p class="muted">Cargando los modelos de tu cuenta de Groq…</p></div>' : ''}</section>`;
@@ -703,6 +732,8 @@ async function vistaAjustes(main) {
   }
   html += bloquesPorSeccion(lista, idx) + '</div>';
   L.innerHTML = html;
+  // #/ajustes/ia/gemini (desde «Primeros pasos» o el aviso de «sin IA»): baja hasta la guía de la clave de Gemini.
+  if (cat === 'ia' && extra === 'gemini') requestAnimationFrame(() => { const g = L.querySelector('#ia-gemini'); if (g) { g.scrollIntoView({ block: 'start' }); g.querySelector('#gemini-clave')?.focus({ preventScroll: true }); } });
   enlazarAjustes(L, todos, guardarGeneral, () => vistaAjustes(main));
   const gq = L.querySelector('[data-groq]'); if (gq) gq.onclick = async () => { const v = L.querySelector('#groq').value.trim(); if (!v) return aviso('Pega la clave'); gq.disabled = true; aviso('Probando la clave…'); try { await api('/api/ia/groq', { clave: v }); aviso('Clave de Groq guardada y probada'); vistaAjustes(main); } catch (e) { if (e.message !== 'sesión') aviso(e.message); } gq.disabled = false; };
   const gm = L.querySelector('.groq-modelos');
@@ -727,6 +758,35 @@ async function vistaAjustes(main) {
       };
     });
   }).catch((e) => { gm.innerHTML = `<p class="error-txt">${esc(e.message)}</p>`; });
+  // Tu propio modelo (API compatible con OpenAI)
+  const pp = L.querySelector('#ia-propio');
+  if (pp) {
+    const presets = datos.propio?.presets || [], $p = (s) => pp.querySelector(s), res = $p('.propio-res');
+    const mostrar = (h) => { res.hidden = false; res.innerHTML = h; };
+    $p('#pr-servicio').onchange = () => { const p = presets.find((x) => x.id === $p('#pr-servicio').value); if (!p) return; if (p.url) $p('#pr-url').value = p.url; $p('#pr-modelo').placeholder = p.ejemplo || 'nombre-del-modelo'; $p('#pr-clave').placeholder = p.clave ? 'sk-…' : '(no hace falta en local)'; };
+    $p('[data-propio-modelos]').onclick = async (ev) => {
+      const b = ev.currentTarget; b.disabled = true; mostrar('<p class="muted">Preguntando al servicio qué modelos tiene…</p>');
+      try {
+        const r = await api('/api/ia/propio/modelos', { url: $p('#pr-url').value.trim(), clave: $p('#pr-clave').value.trim() });
+        $p('#pr-lista').innerHTML = r.modelos.map((m) => `<option value="${esc(m)}">`).join('');
+        if (!$p('#pr-modelo').value && r.modelos.length === 1) $p('#pr-modelo').value = r.modelos[0];
+        mostrar(r.modelos.length ? `<p class="muted">${r.modelos.length === 1 ? "1 modelo" : `${r.modelos.length} modelos`} en ${esc(r.url)}. Toca el campo «Modelo» para elegir.</p>` : '<p class="muted">El servicio responde pero no lista modelos: escribe el nombre a mano.</p>');
+        $p('#pr-modelo').focus();
+      } catch (e) { if (e.message !== 'sesión') mostrar(`<p class="error-txt">${esc(e.message)}</p>`); }
+      b.disabled = false;
+    };
+    $p('[data-propio-guardar]').onclick = async (ev) => {
+      const b = ev.currentTarget; b.disabled = true; mostrar('<p class="muted">Probando tu modelo con una petición real (un modelo local puede tardar en cargarse)…</p>');
+      try {
+        const r = await api('/api/ia/propio', { url: $p('#pr-url').value.trim(), modelo: $p('#pr-modelo').value.trim(), clave: $p('#pr-clave').value.trim(), vision: $p('#pr-vision').checked });
+        aviso(`Tu modelo funciona (${r.segundos} s) y queda conectado`); vistaAjustes(main); return;
+      } catch (e) { if (e.message !== 'sesión') mostrar(`<p class="error-txt">${esc(e.message)}</p>`); }
+      b.disabled = false;
+    };
+    const q = $p('[data-propio-quitar]'); if (q) q.onclick = async () => { try { await api('/api/ia/propio', { quitar: true }); aviso('Tu modelo quedó desconectado'); vistaAjustes(main); } catch (e) { if (e.message !== 'sesión') aviso(e.message); } };
+  }
+  const gk = L.querySelector('[data-gemini]'); if (gk) gk.onclick = async () => { const v = L.querySelector('#gemini-clave').value.trim(); if (!v) return aviso('Pega la clave'); gk.disabled = true; aviso('Probando la clave…'); try { await api('/api/ia/gemini', { clave: v }); aviso('Clave de Gemini guardada y probada'); vistaAjustes(main); } catch (e) { if (e.message !== 'sesión') aviso(e.message); } gk.disabled = false; };
+  const gkx = L.querySelector('[data-gemini-quitar]'); if (gkx) gkx.onclick = async () => { try { await api('/api/ia/gemini', { quitar: true }); aviso('Clave de Gemini quitada'); vistaAjustes(main); } catch (e) { if (e.message !== 'sesión') aviso(e.message); } };
   const gx = L.querySelector('[data-groq-quitar]'); if (gx) gx.onclick = async () => { try { await api('/api/ia/groq', { quitar: true }); aviso('Clave de Groq quitada'); vistaAjustes(main); } catch (e) { if (e.message !== 'sesión') aviso(e.message); } };
   L.querySelectorAll('[data-tk]').forEach((x) => { x.onclick = async () => {
     try {

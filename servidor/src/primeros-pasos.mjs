@@ -6,6 +6,7 @@ import { existsSync } from 'node:fs';
 import { db, ajustes, guardarAjustes } from './db.mjs';
 import * as Youtube from './tareas/youtube.mjs';
 import * as Telemetria from './telemetria.mjs';
+import * as IA from './ia-nube.mjs';
 
 const prueba = (cmd, args) => new Promise((ok) => {
   execFile(cmd, args, { timeout: 8000 }, (e, so, se) => ok(!e || (e.code !== 'ENOENT' && e.errno !== -2 && !e.killed && String(so || se).trim().length > 0)));
@@ -33,6 +34,12 @@ async function herramientas(refrescar = false) {
 }
 
 const VER = "tipo NOT IN ('estudio','recop')";
+// Opcional: sin IA los clips salen igual, pero sin título, texto en pantalla ni descripciones.
+function ia() {
+  let p = {}; try { p = IA.estadoPropio(); } catch {}
+  const conectadas = [p.configurado && `tu modelo ${p.modelo}`, IA.groqConfigurado() && 'Groq', IA.geminiConfigurado() && 'Gemini'].filter(Boolean);
+  return { id: 'ia', titulo: 'Conecta una IA', opcional: true, hecho: conectadas.length > 0, detalle: conectadas.join(', ') };
+}
 export async function estado({ refrescar = false } = {}) {
   const h = await herramientas(refrescar);
   const listo = (id) => h.find((x) => x.id === id)?.ok;
@@ -49,6 +56,7 @@ export async function estado({ refrescar = false } = {}) {
     { id: 'procesando', titulo: 'Procesando', hecho: !!conClips,
       video: ultimo && { id: ultimo.id, titulo: ultimo.titulo || '', estado: ultimo.estado, paso: ultimo.paso || '', error: ultimo.error || '', creado: ultimo.creado ? `${String(ultimo.creado).replace(' ', 'T')}Z` : null } },
     { id: 'revisar', titulo: 'Revisa tu primer clip', hecho: valoradas > 0, video: conClips ? { id: conClips.id, titulo: conClips.titulo || '' } : null },
+    ia(),
     { id: 'streamer', titulo: 'Añade un streamer', opcional: true, hecho: streamers > 0 },
     { id: 'youtube', titulo: 'Conecta YouTube', opcional: true, hecho: youtube },
   ];

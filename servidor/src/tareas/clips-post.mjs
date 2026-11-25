@@ -33,8 +33,8 @@ const ffmpegSalida = (args, timeout = 600000) => new Promise((ok, mal) => {
   execFile('nice', ['-n', '5', 'ffmpeg', '-hide_banner', ...args], { timeout, maxBuffer: 32 << 20 }, (err, stdout, stderr) => (err ? mal(new Error(String(stderr || err.message).slice(-400))) : ok(String(stderr))));
 });
 
-// ---------- IA: Groq primero, Gemini de reserva con tope diario (ver src/ia-nube.mjs) ----------
-const gemini = (prompt, { imagenes = [], preferir = 'gemini' } = {}) => pedirJSON(prompt, { imagenes, preferir }); // vídeos: Gemini primero, Groq de respaldo
+// ---------- IA: tu propio modelo si lo conectaste; si no, Gemini primero y Groq de respaldo (ver src/ia-nube.mjs) ----------
+const gemini = (prompt, { imagenes = [], preferir = 'gemini', soloConImagenes = false } = {}) => pedirJSON(prompt, { imagenes, preferir, soloConImagenes });
 
 // Palabras del clip con su tiempo relativo al inicio del clip.
 function palabrasDelClip(segmentos, ini, fin) {
@@ -356,7 +356,7 @@ export async function detectarWebcam(fuente, tiempos = [60, 300]) {
       const img = await fotogramaB64(fuente, t, 1024);
       const r = await gemini('En esta captura de un directo hay (quizá) un recuadro con la webcam del streamer superpuesto al juego. '
         + 'Devuelve solo JSON {"webcam":[ymin,xmin,ymax,xmax] o null,"cara":[ymin,xmin,ymax,xmax] o null} con coordenadas normalizadas 0–1000: '
-        + '"webcam" = el recuadro completo de la cámara (sin marcos decorativos ni el nombre); "cara" = la cara de la persona dentro de ese recuadro.', { imagenes: [img], preferir: 'gemini' });
+        + '"webcam" = el recuadro completo de la cámara (sin marcos decorativos ni el nombre); "cara" = la cara de la persona dentro de ese recuadro.', { imagenes: [img], preferir: 'gemini', soloConImagenes: true });
       const caja = (b) => (Array.isArray(b) && b.length === 4 ? [Math.round(b[1] / 1000 * m.w), Math.round(b[0] / 1000 * m.h), Math.round((b[3] - b[1]) / 1000 * m.w), Math.round((b[2] - b[0]) / 1000 * m.h)] : null);
       const cam = caja(r.webcam), cara = caja(r.cara);
       if (cam && cam[2] > 40 && cam[3] > 40 && cam[2] < m.w * 0.9) return { cam, cara: cara && cara[2] > 10 ? cara : null };
